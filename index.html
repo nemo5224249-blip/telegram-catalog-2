@@ -526,7 +526,7 @@
     .progress-fill {
       height: 100%;
       background: var(--accent);
-      transition: width 0.3s, background 0.3s;
+      transition: width 0.3s;
     }
   </style>
 </head>
@@ -581,25 +581,21 @@
   </div>
   <div class="drawer-body">
 
-    <!-- СЧЕТЧИКИ ЛИМИТОВ -->
     <div class="admin-section">
       <h3>Пам'ять та ліміти</h3>
-      
       <div class="stats-row">
         <div class="stats-flex">
-          <span style="color: var(--text-muted);">Документ (Ліміт збереження):</span>
+          <span style="color: var(--text-muted);">Документ (Ліміт 1 МБ):</span>
           <span id="docSizeText">0 / 1024 КБ</span>
         </div>
         <div class="progress-bar">
           <div class="progress-fill" id="docSizeBar" style="width: 0%;"></div>
         </div>
-        <div style="font-size: 0.7rem; color: var(--danger); margin-top: 2px; display: none;" id="docWarn">Перевищено ліміт 1 МБ! Збереження неможливе.</div>
       </div>
-
       <div class="stats-row" style="margin-top: 12px;">
         <div class="stats-flex">
-          <span style="color: var(--text-muted);">База даних (Ліміт безкоштовно):</span>
-          <span id="gbSizeText">0 / 1024 МБ (1 ГБ)</span>
+          <span style="color: var(--text-muted);">База даних (Ліміт 1 ГБ):</span>
+          <span id="gbSizeText">0 / 1024 МБ</span>
         </div>
         <div class="progress-bar">
           <div class="progress-fill" id="gbSizeBar" style="width: 0%;"></div>
@@ -665,6 +661,7 @@
   let isAdmin = false;
   let activeDetailProduct = null;
   let activeMediaIndex = 0;
+  let isRemoteUpdating = false;
 
   const TELEGRAM_USERNAME = "your_telegram_username";
 
@@ -706,35 +703,36 @@
     onSnapshot(catalogDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const remoteData = docSnap.data();
-        state = {
-          siteTitle: remoteData.siteTitle || "Каталог товарів",
-          categories: remoteData.categories || ["Усі"],
-          products: remoteData.products || []
-        };
+        if (!isRemoteUpdating) {
+          state = {
+            siteTitle: remoteData.siteTitle || "Каталог товарів",
+            categories: remoteData.categories || ["Усі"],
+            products: remoteData.products || []
+          };
+          renderAll();
+        }
       } else {
         saveToFirebase(state);
       }
-      renderAll();
     });
   }
 
   async function saveToFirebase(newData) {
+    isRemoteUpdating = true;
     try {
       await setDoc(catalogDocRef, newData);
       updateStorageCounters();
     } catch (e) {
       console.error("Помилка збереження в Firebase: ", e);
-      alert("Не вдалося зберегти: розмір перевищує ліміт БД.");
+    } finally {
+      setTimeout(() => { isRemoteUpdating = false; }, 500);
     }
   }
 
   function updateStorageCounters() {
-    // Вычисляем приблизительный вес данных в байтах
     const bytes = new Blob([JSON.stringify(state)]).size;
-    
-    // Переменные лимитов
-    const docLimitBytes = 1048576; // 1 МБ лимит документа Firestore
-    const gbLimitBytes = 1073741824; // 1 ГБ лимит базы данных
+    const docLimitBytes = 1048576;
+    const gbLimitBytes = 1073741824;
     
     const kb = (bytes / 1024).toFixed(1);
     const mb = (bytes / (1024 * 1024)).toFixed(3);
@@ -742,29 +740,17 @@
     const docPercent = Math.min((bytes / docLimitBytes) * 100, 100).toFixed(1);
     const gbPercent = Math.min((bytes / gbLimitBytes) * 100, 100).toFixed(6);
 
-    // Обновление UI для документа
     document.getElementById("docSizeText").textContent = `${kb} / 1024 КБ`;
     document.getElementById("docSizeBar").style.width = `${docPercent}%`;
-    
-    if (bytes >= docLimitBytes) {
-      document.getElementById("docSizeBar").style.background = "var(--danger)";
-      document.getElementById("docWarn").style.display = "block";
-    } else if (docPercent > 80) {
-      document.getElementById("docSizeBar").style.background = "orange";
-      document.getElementById("docWarn").style.display = "none";
-    } else {
-      document.getElementById("docSizeBar").style.background = "var(--accent)";
-      document.getElementById("docWarn").style.display = "none";
-    }
-
-    // Обновление UI для базы 1 ГБ
     document.getElementById("gbSizeText").textContent = `${mb} / 1024 МБ`;
     document.getElementById("gbSizeBar").style.width = `${gbPercent}%`;
   }
 
   function renderAll() {
     siteTitleEl.textContent = state.siteTitle;
-    adminTitleInput.value = state.siteTitle;
+    if (document.activeElement !== adminTitleInput) {
+      adminTitleInput.value = state.siteTitle;
+    }
     renderCategories();
     renderProducts();
     if (isAdmin) {
@@ -793,8 +779,8 @@
     productGrid.innerHTML = "";
     const filtered = state.products.filter(p => {
       const matchesCat = (currentCategory === "Усі") || (p.category === currentCategory);
-      const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            p.desc.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            (p.desc || "").toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCat && matchesSearch;
     });
 
