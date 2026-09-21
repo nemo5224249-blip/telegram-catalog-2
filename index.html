@@ -289,7 +289,7 @@
       justify-content: center;
     }
 
-    .detail-media-container img, .detail-media-container video {
+    .detail-media-container img {
       width: 100%;
       height: 100%;
       object-fit: contain;
@@ -324,12 +324,6 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-    }
-
-    .vid-badge {
-      font-size: 0.6rem;
-      color: var(--accent);
-      font-weight: bold;
     }
 
     .drawer {
@@ -367,6 +361,10 @@
 
     .admin-section {
       margin-bottom: 24px;
+      background: rgba(15, 23, 42, 0.5);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
 
     .admin-section h3 {
@@ -472,6 +470,7 @@
       position: relative;
       cursor: pointer;
       overflow: hidden;
+      background: var(--card-bg);
     }
 
     .upload-box input {
@@ -503,6 +502,32 @@
       font-size: 0.7rem;
       z-index: 2;
     }
+
+    .stats-row {
+      font-size: 0.8rem;
+      margin-bottom: 8px;
+    }
+    
+    .stats-flex {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      background: var(--bg-color);
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s, background 0.3s;
+    }
   </style>
 </head>
 <body>
@@ -523,7 +548,6 @@
   <div class="empty-state" id="emptyState" style="display: none;">Товарів не знайдено</div>
 </div>
 
-<!-- Modal Detail -->
 <div class="overlay" id="detailOverlay">
   <div class="modal">
     <button class="modal-close" id="detailClose">&times;</button>
@@ -537,7 +561,6 @@
   </div>
 </div>
 
-<!-- Login Modal -->
 <div class="overlay" id="loginOverlay">
   <div class="modal" style="max-width: 320px;">
     <h3 style="margin-bottom: 12px;">Вхід в адмін-панель</h3>
@@ -550,7 +573,6 @@
   </div>
 </div>
 
-<!-- Admin Drawer -->
 <div class="overlay" id="adminOverlay"></div>
 <aside class="drawer" id="adminDrawer">
   <div class="drawer-header">
@@ -558,6 +580,32 @@
     <button class="modal-close" id="adminClose" style="position: static;">&times;</button>
   </div>
   <div class="drawer-body">
+
+    <!-- СЧЕТЧИКИ ЛИМИТОВ -->
+    <div class="admin-section">
+      <h3>Пам'ять та ліміти</h3>
+      
+      <div class="stats-row">
+        <div class="stats-flex">
+          <span style="color: var(--text-muted);">Документ (Ліміт збереження):</span>
+          <span id="docSizeText">0 / 1024 КБ</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="docSizeBar" style="width: 0%;"></div>
+        </div>
+        <div style="font-size: 0.7rem; color: var(--danger); margin-top: 2px; display: none;" id="docWarn">Перевищено ліміт 1 МБ! Збереження неможливе.</div>
+      </div>
+
+      <div class="stats-row" style="margin-top: 12px;">
+        <div class="stats-flex">
+          <span style="color: var(--text-muted);">База даних (Ліміт безкоштовно):</span>
+          <span id="gbSizeText">0 / 1024 МБ (1 ГБ)</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="gbSizeBar" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
     
     <div class="admin-section">
       <h3>Загальні налаштування</h3>
@@ -565,7 +613,6 @@
         <label>Назва магазину</label>
         <input type="text" id="adminTitle">
       </div>
-      <button class="btn primary" id="exportBtn" style="margin-top: 8px;">Експортувати index.html</button>
     </div>
 
     <div class="admin-section">
@@ -583,7 +630,7 @@
       <div id="adminProducts"></div>
     </div>
 
-    <div class="admin-section">
+    <div class="admin-section" style="background: transparent; border: none; padding: 0;">
       <button class="btn danger" id="adminLogout">Вийти з панелі</button>
     </div>
 
@@ -607,23 +654,12 @@
   const db = getFirestore(app);
   const catalogDocRef = doc(db, "catalog", "mainData");
 
-  let INITIAL_DATA = {
+  let state = {
     siteTitle: "Каталог товарів",
     categories: ["Усі", "Одежда", "Обувь", "Аксессуары"],
-    products: [
-      {
-        id: "1",
-        title: "Базовая футболка",
-        category: "Одежда",
-        price: 450,
-        desc: "Качественная хлопковая футболка классического кроя.",
-        photos: [],
-        video: ""
-      }
-    ]
+    products: []
   };
 
-  let state = { ...INITIAL_DATA };
   let currentCategory = "Усі";
   let searchQuery = "";
   let isAdmin = false;
@@ -659,7 +695,6 @@
   const adminDrawer = document.getElementById("adminDrawer");
   const adminClose = document.getElementById("adminClose");
   const adminLogout = document.getElementById("adminLogout");
-  const exportBtn = document.getElementById("exportBtn");
   const adminTitleInput = document.getElementById("adminTitle");
   const adminCategoryTags = document.getElementById("adminCategoryTags");
   const newCategoryInput = document.getElementById("newCategory");
@@ -672,25 +707,59 @@
       if (docSnap.exists()) {
         const remoteData = docSnap.data();
         state = {
-          siteTitle: remoteData.siteTitle || INITIAL_DATA.siteTitle,
-          categories: remoteData.categories || INITIAL_DATA.categories,
-          products: remoteData.products || INITIAL_DATA.products
+          siteTitle: remoteData.siteTitle || "Каталог товарів",
+          categories: remoteData.categories || ["Усі"],
+          products: remoteData.products || []
         };
-        renderAll();
       } else {
-        saveToFirebase(INITIAL_DATA);
+        saveToFirebase(state);
       }
-    }, (error) => {
-      console.error("Ошибка чтения Firebase: ", error);
+      renderAll();
     });
   }
 
   async function saveToFirebase(newData) {
     try {
       await setDoc(catalogDocRef, newData);
+      updateStorageCounters();
     } catch (e) {
-      console.error("Ошибка сохранения в Firebase: ", e);
+      console.error("Помилка збереження в Firebase: ", e);
+      alert("Не вдалося зберегти: розмір перевищує ліміт БД.");
     }
+  }
+
+  function updateStorageCounters() {
+    // Вычисляем приблизительный вес данных в байтах
+    const bytes = new Blob([JSON.stringify(state)]).size;
+    
+    // Переменные лимитов
+    const docLimitBytes = 1048576; // 1 МБ лимит документа Firestore
+    const gbLimitBytes = 1073741824; // 1 ГБ лимит базы данных
+    
+    const kb = (bytes / 1024).toFixed(1);
+    const mb = (bytes / (1024 * 1024)).toFixed(3);
+    
+    const docPercent = Math.min((bytes / docLimitBytes) * 100, 100).toFixed(1);
+    const gbPercent = Math.min((bytes / gbLimitBytes) * 100, 100).toFixed(6);
+
+    // Обновление UI для документа
+    document.getElementById("docSizeText").textContent = `${kb} / 1024 КБ`;
+    document.getElementById("docSizeBar").style.width = `${docPercent}%`;
+    
+    if (bytes >= docLimitBytes) {
+      document.getElementById("docSizeBar").style.background = "var(--danger)";
+      document.getElementById("docWarn").style.display = "block";
+    } else if (docPercent > 80) {
+      document.getElementById("docSizeBar").style.background = "orange";
+      document.getElementById("docWarn").style.display = "none";
+    } else {
+      document.getElementById("docSizeBar").style.background = "var(--accent)";
+      document.getElementById("docWarn").style.display = "none";
+    }
+
+    // Обновление UI для базы 1 ГБ
+    document.getElementById("gbSizeText").textContent = `${mb} / 1024 МБ`;
+    document.getElementById("gbSizeBar").style.width = `${gbPercent}%`;
   }
 
   function renderAll() {
@@ -701,6 +770,7 @@
     if (isAdmin) {
       renderAdminCategories();
       renderAdminProducts();
+      updateStorageCounters();
     }
   }
 
@@ -788,9 +858,6 @@
     if (activeDetailProduct.photos) {
       activeDetailProduct.photos.forEach(url => mediaList.push({ type: 'image', url }));
     }
-    if (activeDetailProduct.video) {
-      mediaList.push({ type: 'video', url: activeDetailProduct.video });
-    }
 
     detailMain.innerHTML = "";
     detailThumbs.innerHTML = "";
@@ -801,21 +868,13 @@
     }
 
     const currentMedia = mediaList[activeMediaIndex] || mediaList[0];
-    if (currentMedia.type === 'image') {
-      detailMain.innerHTML = `<img src="${currentMedia.url}" alt="">`;
-    } else {
-      detailMain.innerHTML = `<video src="${currentMedia.url}" controls autoplay loop></video>`;
-    }
+    detailMain.innerHTML = `<img src="${currentMedia.url}" alt="">`;
 
     if (mediaList.length > 1) {
       mediaList.forEach((item, idx) => {
         const thumb = document.createElement("div");
         thumb.className = `detail-thumb ${idx === activeMediaIndex ? "active" : ""}`;
-        if (item.type === 'image') {
-          thumb.innerHTML = `<img src="${item.url}" alt="">`;
-        } else {
-          thumb.innerHTML = `<div class="vid-badge">VIDEO</div>`;
-        }
+        thumb.innerHTML = `<img src="${item.url}" alt="">`;
         thumb.onclick = () => {
           activeMediaIndex = idx;
           renderDetailMedia();
@@ -909,7 +968,7 @@
 
   function renderAdminProducts() {
     adminProductsList.innerHTML = "";
-    state.products.forEach((p, index) => {
+    state.products.forEach((p) => {
       const card = document.createElement("div");
       card.className = "product-admin-card";
 
@@ -926,8 +985,8 @@
 
       card.innerHTML = `
         <div class="admin-row">
-          <input type="text" value="${p.title}" placeholder="Назва" onchange="updateProduct('${p.id}', 'title', this.value)">
-          <input type="number" value="${p.price}" placeholder="Ціна" style="max-width:100px;" onchange="updateProduct('${p.id}', 'price', Number(this.value))">
+          <input type="text" value="${p.title || ''}" placeholder="Назва" onchange="updateProduct('${p.id}', 'title', this.value)">
+          <input type="number" value="${p.price || 0}" placeholder="Ціна" style="max-width:100px;" onchange="updateProduct('${p.id}', 'price', Number(this.value))">
         </div>
         <div class="admin-row">
           <select onchange="updateProduct('${p.id}', 'category', this.value)">
@@ -935,7 +994,7 @@
           </select>
         </div>
         <div class="admin-row">
-          <textarea placeholder="Опис товару..." onchange="updateProduct('${p.id}', 'desc', this.value)">${p.desc}</textarea>
+          <textarea placeholder="Опис товару..." onchange="updateProduct('${p.id}', 'desc', this.value)">${p.desc || ''}</textarea>
         </div>
         <div class="photo-slots">${photosHtml}</div>
         <div class="product-foot">
@@ -961,19 +1020,17 @@
 
   addProductBtn.onclick = () => {
     const newProd = {
-      id: Date.now().toString(),
+      id: "prod_" + Date.now(),
       title: "Новий товар",
-      category: state.categories[1] || "Без категории",
+      category: state.categories[1] || "Одежда",
       price: 0,
       desc: "",
-      photos: [],
-      video: ""
+      photos: []
     };
     state.products.push(newProd);
     saveToFirebase(state);
   };
 
-  // ФУНКЦИЯ АВТОМАТИЧЕСКОГО СЖАТИЯ ИЗОБРАЖЕНИЙ
   function compressImage(file, maxWidth, quality, callback) {
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -1005,8 +1062,7 @@
     const file = event.target.files[0];
     if (!file) return;
 
-    // Сжимаем до max-width: 800px и качества 70%
-    compressImage(file, 800, 0.7, function(compressedBase64) {
+    compressImage(file, 500, 0.5, function(compressedBase64) {
       const p = state.products.find(item => item.id === prodId);
       if (p) {
         if (!p.photos) p.photos = [];
@@ -1022,15 +1078,6 @@
       p.photos.splice(slotIndex, 1);
       saveToFirebase(state);
     }
-  };
-
-  exportBtn.onclick = () => {
-    const currentHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-    const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "index.html";
-    link.click();
   };
 
   listenToFirebase();
