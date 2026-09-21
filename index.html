@@ -597,14 +597,14 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // 1. КОНФИГУРАЦИЯ FIREBASE (Вставьте свои ключи)
+  // КОНФИГУРАЦИЯ FIREBASE
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyOc-BE2SqzP27PPnNF9MYys9aaapD9N2xk",
+    authDomain: "telegram-catalog-2.firebaseapp.com",
+    projectId: "telegram-catalog-2",
+    storageBucket: "telegram-catalog-2.appspot.com",
+    messagingSenderId: "461518963018",
+    appId: "1:461518963018:web:fae25cc1dec5da07c35f13"
   };
 
   // Инициализация Firebase
@@ -677,7 +677,7 @@
   const adminProductsList = document.getElementById("adminProducts");
   const addProductBtn = document.getElementById("addProduct");
 
-  // 2. СИНХРОНИЗАЦИЯ С FIREBASE FIRESTORE
+  // СИНХРОНИЗАЦИЯ С FIREBASE FIRESTORE
   function listenToFirebase() {
     onSnapshot(catalogDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -689,7 +689,6 @@
         };
         renderAll();
       } else {
-        // Запись начальных данных, если коллекция пуста
         saveToFirebase(INITIAL_DATA);
       }
     }, (error) => {
@@ -863,7 +862,6 @@
   };
 
   loginSubmit.onclick = () => {
-    // Простой пароль администратора по умолчанию
     if (loginPassword.value === "admin123") {
       isAdmin = true;
       loginOverlay.classList.remove("open");
@@ -931,7 +929,6 @@
       const card = document.createElement("div");
       card.className = "product-admin-card";
 
-      // HTML slots for 6 photos
       let photosHtml = "";
       for (let i = 0; i < 6; i++) {
         const photoUrl = (p.photos && p.photos[i]) ? p.photos[i] : "";
@@ -992,7 +989,6 @@
     saveToFirebase(state);
   };
 
-  // Convert File Upload to Base64 (Local demo storage)
   window.uploadPhoto = function(event, prodId, slotIndex) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1016,7 +1012,6 @@
     }
   };
 
-  // Export static document with state embedded
   exportBtn.onclick = () => {
     const currentHtml = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
     const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
@@ -1026,7 +1021,6 @@
     link.click();
   };
 
-  // Initialize Connection
   listenToFirebase();
 </script>
 
