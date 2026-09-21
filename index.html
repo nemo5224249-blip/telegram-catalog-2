@@ -471,6 +471,7 @@
       cursor: pointer;
       overflow: hidden;
       background: var(--card-bg);
+      text-align: center;
     }
 
     .upload-box input {
@@ -501,13 +502,14 @@
       justify-content: center;
       font-size: 0.7rem;
       z-index: 2;
+      cursor: pointer;
     }
 
     .stats-row {
       font-size: 0.8rem;
       margin-bottom: 8px;
     }
-    
+
     .stats-flex {
       display: flex;
       justify-content: space-between;
@@ -527,6 +529,12 @@
       height: 100%;
       background: var(--accent);
       transition: width 0.3s;
+    }
+
+    .product-foot {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
     }
   </style>
 </head>
@@ -585,7 +593,7 @@
       <h3>Пам'ять та ліміти</h3>
       <div class="stats-row">
         <div class="stats-flex">
-          <span style="color: var(--text-muted);">Документ (Ліміт 1 МБ):</span>
+          <span style="color: var(--text-muted);">Документ Firestore (ліміт 1 МБ):</span>
           <span id="docSizeText">0 / 1024 КБ</span>
         </div>
         <div class="progress-bar">
@@ -594,15 +602,19 @@
       </div>
       <div class="stats-row" style="margin-top: 12px;">
         <div class="stats-flex">
-          <span style="color: var(--text-muted);">База даних (Ліміт 1 ГБ):</span>
-          <span id="gbSizeText">0 / 1024 МБ</span>
+          <span style="color: var(--text-muted);">Фото у Storage (ліміт 1 ГБ):</span>
+          <span id="gbSizeText">0 / 1024 МБ · 0 фото</span>
         </div>
         <div class="progress-bar">
           <div class="progress-fill" id="gbSizeBar" style="width: 0%;"></div>
         </div>
       </div>
+      <p style="font-size:0.72rem;color:var(--text-muted);margin-top:8px;">
+        Підрахунок фото/розміру оновлюється при відкритті цієї панелі — натисніть «Оновити» за потреби.
+      </p>
+      <button class="btn" id="refreshStorageStats" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);margin-top:6px;">Оновити лічильник</button>
     </div>
-    
+
     <div class="admin-section">
       <h3>Загальні налаштування</h3>
       <div class="field">
@@ -635,21 +647,36 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import {
+    getStorage, ref as storageRef, uploadBytes, getDownloadURL,
+    deleteObject, listAll, getMetadata
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
+  /* ==========================================================================
+     ВАЖЛИВО: у консолі Firebase (console.firebase.google.com) для цього
+     проєкту потрібно один раз увімкнути Storage:
+     Build → Storage → Get started (достатньо безкоштовного плану Spark).
+     Без цього кроку завантаження фото працювати не буде.
+     ========================================================================== */
   const firebaseConfig = {
-    apiKey: "AIzaSyOc-BE2SqzP27PPnNF9MYys9aaapD9N2xk",
-    authDomain: "telegram-catalog-2.firebaseapp.com",
-    projectId: "telegram-catalog-2",
-    storageBucket: "telegram-catalog-2.appspot.com",
-    messagingSenderId: "461518963018",
-    appId: "1:461518963018:web:fae25cc1dec5da07c35f13"
+    apiKey: "AIzaSyDc-8E2Sqzp27PPnNf9MYys9aaapD9N2xk",
+    authDomain: "premium-luxe-shop.firebaseapp.com",
+    databaseURL: "https://premium-luxe-shop-default-rtdb.firebaseio.com",
+    projectId: "premium-luxe-shop",
+    storageBucket: "premium-luxe-shop.firebasestorage.app",
+    messagingSenderId: "461518983018",
+    appId: "1:461518983018:web:fae25cc1dec5da07c35f13"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const storage = getStorage(app);
   const catalogDocRef = doc(db, "catalog", "mainData");
 
+  /* Тепер photos — масив об'єктів { url, path }, а не base64-рядків.
+     url  — публічне посилання на файл у Firebase Storage (його бачать усі);
+     path — внутрішній шлях у Storage, потрібен лише щоб коректно видалити файл. */
   let state = {
     siteTitle: "Каталог товарів",
     categories: ["Усі", "Одежда", "Обувь", "Аксессуары"],
@@ -661,8 +688,8 @@
   let isAdmin = false;
   let activeDetailProduct = null;
   let activeMediaIndex = 0;
-  let isRemoteUpdating = false;
 
+  const ADMIN_PASSWORD = "admin123";
   const TELEGRAM_USERNAME = "your_telegram_username";
 
   const siteTitleEl = document.getElementById("siteTitle");
@@ -698,54 +725,84 @@
   const addCategoryBtn = document.getElementById("addCategory");
   const adminProductsList = document.getElementById("adminProducts");
   const addProductBtn = document.getElementById("addProduct");
+  const refreshStorageStatsBtn = document.getElementById("refreshStorageStats");
 
-  function listenToFirebase() {
-    onSnapshot(catalogDocRef, (docSnap) => {
+  /* ---------- Завантаження / збереження каталогу (тексти, ціни, посилання на фото) ---------- */
+  async function loadFromFirebase() {
+    try {
+      const docSnap = await getDoc(catalogDocRef);
       if (docSnap.exists()) {
         const remoteData = docSnap.data();
-        if (!isRemoteUpdating) {
-          state = {
-            siteTitle: remoteData.siteTitle || "Каталог товарів",
-            categories: remoteData.categories || ["Усі"],
-            products: remoteData.products || []
-          };
-          renderAll();
-        }
+        state = {
+          siteTitle: remoteData.siteTitle || "Каталог товарів",
+          categories: remoteData.categories || ["Усі"],
+          products: remoteData.products || []
+        };
       } else {
-        saveToFirebase(state);
+        await saveToFirebase(state);
       }
-    });
-  }
-
-  async function saveToFirebase(newData) {
-    isRemoteUpdating = true;
-    try {
-      await setDoc(catalogDocRef, newData);
-      updateStorageCounters();
+      renderAll();
     } catch (e) {
-      console.error("Помилка збереження в Firebase: ", e);
-    } finally {
-      setTimeout(() => { isRemoteUpdating = false; }, 500);
+      console.error("Помилка завантаження з Firebase: ", e);
     }
   }
 
-  function updateStorageCounters() {
-    const bytes = new Blob([JSON.stringify(state)]).size;
-    const docLimitBytes = 1048576;
-    const gbLimitBytes = 1073741824;
-    
-    const kb = (bytes / 1024).toFixed(1);
-    const mb = (bytes / (1024 * 1024)).toFixed(3);
-    
-    const docPercent = Math.min((bytes / docLimitBytes) * 100, 100).toFixed(1);
-    const gbPercent = Math.min((bytes / gbLimitBytes) * 100, 100).toFixed(6);
-
-    document.getElementById("docSizeText").textContent = `${kb} / 1024 КБ`;
-    document.getElementById("docSizeBar").style.width = `${docPercent}%`;
-    document.getElementById("gbSizeText").textContent = `${mb} / 1024 МБ`;
-    document.getElementById("gbSizeBar").style.width = `${gbPercent}%`;
+  async function saveToFirebase(newData) {
+    try {
+      await setDoc(catalogDocRef, newData);
+      updateDocSizeCounter();
+    } catch (e) {
+      console.error("Помилка збереження в Firebase: ", e);
+      alert("Не вдалося зберегти дані на сервер! Документ каталогу міг перевищити ліміт Firestore (1 МБ) — перевірте, чи не забагато тексту в описах, і що фото зберігаються через Storage, а не напряму в документі.");
+    }
   }
 
+  /* ---------- Лічильник розміру документа Firestore (текст + посилання) ---------- */
+  function updateDocSizeCounter() {
+    const bytes = new Blob([JSON.stringify(state)]).size;
+    const docLimitBytes = 1048576;
+    const kb = (bytes / 1024).toFixed(1);
+    const docPercent = Math.min((bytes / docLimitBytes) * 100, 100).toFixed(1);
+    document.getElementById("docSizeText").textContent = `${kb} / 1024 КБ`;
+    document.getElementById("docSizeBar").style.width = `${docPercent}%`;
+  }
+
+  /* ---------- Лічильник реального обсягу фото у Firebase Storage ---------- */
+  async function updateStorageStats() {
+    const gbSizeText = document.getElementById("gbSizeText");
+    const gbSizeBar = document.getElementById("gbSizeBar");
+    gbSizeText.textContent = "Підрахунок…";
+    try {
+      const rootRef = storageRef(storage, "products");
+      const rootList = await listAll(rootRef);
+      let totalBytes = 0;
+      let totalFiles = 0;
+
+      for (const folderRef of rootList.prefixes) {
+        const inner = await listAll(folderRef);
+        for (const fileRef of inner.items) {
+          try {
+            const meta = await getMetadata(fileRef);
+            totalBytes += meta.size || 0;
+            totalFiles += 1;
+          } catch (err) { /* файл міг бути видалений паралельно — пропускаємо */ }
+        }
+      }
+
+      const gbLimitBytes = 1073741824; // 1 ГБ
+      const mb = (totalBytes / (1024 * 1024)).toFixed(2);
+      const percent = Math.min((totalBytes / gbLimitBytes) * 100, 100).toFixed(3);
+      gbSizeText.textContent = `${mb} / 1024 МБ · ${totalFiles} фото`;
+      gbSizeBar.style.width = `${percent}%`;
+    } catch (e) {
+      console.error("Не вдалося порахувати обсяг Storage:", e);
+      gbSizeText.textContent = "Помилка підрахунку";
+    }
+  }
+
+  refreshStorageStatsBtn.onclick = updateStorageStats;
+
+  /* ---------- Рендер ---------- */
   function renderAll() {
     siteTitleEl.textContent = state.siteTitle;
     if (document.activeElement !== adminTitleInput) {
@@ -756,7 +813,7 @@
     if (isAdmin) {
       renderAdminCategories();
       renderAdminProducts();
-      updateStorageCounters();
+      updateDocSizeCounter();
     }
   }
 
@@ -779,7 +836,7 @@
     productGrid.innerHTML = "";
     const filtered = state.products.filter(p => {
       const matchesCat = (currentCategory === "Усі") || (p.category === currentCategory);
-      const matchesSearch = (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchesSearch = (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
                             (p.desc || "").toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCat && matchesSearch;
     });
@@ -793,13 +850,14 @@
     filtered.forEach(p => {
       const card = document.createElement("div");
       card.className = "card";
-      
-      const mediaThumb = p.photos && p.photos.length > 0 
-        ? `<img src="${p.photos[0]}" alt="${p.title}">`
+
+      const firstPhoto = (p.photos && p.photos.length > 0) ? p.photos[0] : null;
+      const mediaThumb = firstPhoto
+        ? `<img src="${firstPhoto.url}" alt="${p.title}">`
         : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
 
-      const photoCountBadge = p.photos && p.photos.length > 1 
-        ? `<span class="photo-count">+${p.photos.length - 1}</span>` 
+      const photoCountBadge = p.photos && p.photos.length > 1
+        ? `<span class="photo-count">+${p.photos.length - 1}</span>`
         : "";
 
       card.innerHTML = `
@@ -830,7 +888,7 @@
     detailName.textContent = p.title;
     detailDesc.textContent = p.desc;
     detailPrice.textContent = `${p.price} ₴`;
-    
+
     const message = encodeURIComponent(`Доброго дня! Цікавить товар: ${p.title} (Ціна: ${p.price} ₴)`);
     detailOrderBtn.href = `https://t.me/${TELEGRAM_USERNAME}?text=${message}`;
 
@@ -840,10 +898,7 @@
 
   function renderDetailMedia() {
     if (!activeDetailProduct) return;
-    const mediaList = [];
-    if (activeDetailProduct.photos) {
-      activeDetailProduct.photos.forEach(url => mediaList.push({ type: 'image', url }));
-    }
+    const mediaList = (activeDetailProduct.photos || []).map(p => ({ type: 'image', url: p.url }));
 
     detailMain.innerHTML = "";
     detailThumbs.innerHTML = "";
@@ -892,13 +947,14 @@
   };
 
   loginSubmit.onclick = () => {
-    if (loginPassword.value === "admin123") {
+    if (loginPassword.value === ADMIN_PASSWORD) {
       isAdmin = true;
       loginOverlay.classList.remove("open");
       loginError.textContent = "";
       loginPassword.value = "";
       openAdminDrawer();
       renderAll();
+      updateStorageStats();
     } else {
       loginError.textContent = "Невірний пароль!";
     }
@@ -925,6 +981,7 @@
   adminTitleInput.onchange = (e) => {
     state.siteTitle = e.target.value;
     saveToFirebase(state);
+    renderAll();
   };
 
   function renderAdminCategories() {
@@ -941,6 +998,7 @@
   window.removeCategory = function(catName) {
     state.categories = state.categories.filter(c => c !== catName);
     saveToFirebase(state);
+    renderAll();
   };
 
   addCategoryBtn.onclick = () => {
@@ -949,6 +1007,7 @@
       state.categories.push(val);
       newCategoryInput.value = "";
       saveToFirebase(state);
+      renderAll();
     }
   };
 
@@ -960,10 +1019,12 @@
 
       let photosHtml = "";
       for (let i = 0; i < 6; i++) {
-        const photoUrl = (p.photos && p.photos[i]) ? p.photos[i] : "";
+        const photo = (p.photos && p.photos[i]) ? p.photos[i] : null;
         photosHtml += `
           <div class="upload-box">
-            ${photoUrl ? `<img src="${photoUrl}"><span class="remove-x" onclick="removePhoto('${p.id}',${i})">×</span>` : `+ Фото`}
+            ${photo
+              ? `<img src="${photo.url}"><span class="remove-x" onclick="removePhoto('${p.id}',${i})">×</span>`
+              : `+ Фото`}
             <input type="file" accept="image/*" onchange="uploadPhoto(event, '${p.id}', ${i})">
           </div>
         `;
@@ -996,12 +1057,15 @@
     if (p) {
       p[key] = value;
       saveToFirebase(state);
+      renderProducts();
     }
   };
 
   window.deleteProduct = function(id) {
     state.products = state.products.filter(item => item.id !== id);
     saveToFirebase(state);
+    renderAdminProducts();
+    renderProducts();
   };
 
   addProductBtn.onclick = () => {
@@ -1015,58 +1079,99 @@
     };
     state.products.push(newProd);
     saveToFirebase(state);
+    renderAdminProducts();
+    renderProducts();
   };
 
-  function compressImage(file, maxWidth, quality, callback) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
+  /* ---------- Стиснення фото перед завантаженням (менше вага — швидше відкривається) ---------- */
+  function compressImage(file, maxWidth, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
 
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
 
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
 
-        const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
-        callback(compressedDataUrl);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob); else reject(new Error("Не вдалося стиснути зображення"));
+          }, "image/jpeg", quality);
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
       };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
-  window.uploadPhoto = function(event, prodId, slotIndex) {
+  /* ---------- Завантаження фото у Firebase Storage ---------- */
+  window.uploadPhoto = async function(event, prodId, slotIndex) {
     const file = event.target.files[0];
     if (!file) return;
 
-    compressImage(file, 500, 0.5, function(compressedBase64) {
+    const box = event.target.closest(".upload-box");
+    if (box) box.style.opacity = "0.5";
+
+    try {
+      const blob = await compressImage(file, 1280, 0.72);
+
+      const path = `products/${prodId}/${slotIndex}_${Date.now()}.jpg`;
+      const fileRef = storageRef(storage, path);
+      await uploadBytes(fileRef, blob, { contentType: "image/jpeg" });
+      const url = await getDownloadURL(fileRef);
+
       const p = state.products.find(item => item.id === prodId);
       if (p) {
         if (!p.photos) p.photos = [];
-        p.photos[slotIndex] = compressedBase64;
-        saveToFirebase(state);
-      }
-    });
-  };
+        const oldPhoto = p.photos[slotIndex];
+        p.photos[slotIndex] = { url, path };
+        await saveToFirebase(state);
+        renderAdminProducts();
+        renderProducts();
+        updateStorageStats();
 
-  window.removePhoto = function(prodId, slotIndex) {
-    const p = state.products.find(item => item.id === prodId);
-    if (p && p.photos) {
-      p.photos.splice(slotIndex, 1);
-      saveToFirebase(state);
+        // якщо в цьому слоті вже було інше фото — видаляємо старий файл зі Storage
+        if (oldPhoto && oldPhoto.path && oldPhoto.path !== path) {
+          try { await deleteObject(storageRef(storage, oldPhoto.path)); } catch (e) { /* ігноруємо */ }
+        }
+      }
+    } catch (e) {
+      console.error("Помилка завантаження фото:", e);
+      alert("Не вдалося завантажити фото. Перевірте, чи увімкнено Firebase Storage для цього проєкту і чи дозволяють правила доступу запис.");
+    } finally {
+      if (box) box.style.opacity = "1";
+      event.target.value = "";
     }
   };
 
-  listenToFirebase();
+  window.removePhoto = async function(prodId, slotIndex) {
+    const p = state.products.find(item => item.id === prodId);
+    if (p && p.photos && p.photos[slotIndex]) {
+      const photo = p.photos[slotIndex];
+      p.photos.splice(slotIndex, 1);
+      await saveToFirebase(state);
+      renderAdminProducts();
+      renderProducts();
+      updateStorageStats();
+      if (photo.path) {
+        try { await deleteObject(storageRef(storage, photo.path)); } catch (e) { /* файл міг вже бути видалений */ }
+      }
+    }
+  };
+
+  loadFromFirebase();
 </script>
 
 </body>
