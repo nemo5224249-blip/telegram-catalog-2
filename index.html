@@ -236,7 +236,6 @@
       color: var(--text-muted);
     }
 
-    /* Modal / Detail View */
     .overlay {
       position: fixed;
       top: 0;
@@ -333,7 +332,6 @@
       font-weight: bold;
     }
 
-    /* Admin Drawer */
     .drawer {
       position: fixed;
       top: 0;
@@ -592,12 +590,10 @@
   </div>
 </aside>
 
-<!-- Подключение SDK Firebase (v10 / ES Modules) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  // КОНФИГУРАЦИЯ FIREBASE
   const firebaseConfig = {
     apiKey: "AIzaSyOc-BE2SqzP27PPnNF9MYys9aaapD9N2xk",
     authDomain: "telegram-catalog-2.firebaseapp.com",
@@ -607,12 +603,10 @@
     appId: "1:461518963018:web:fae25cc1dec5da07c35f13"
   };
 
-  // Инициализация Firebase
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const catalogDocRef = doc(db, "catalog", "mainData");
 
-  // Initial local state fallback
   let INITIAL_DATA = {
     siteTitle: "Каталог товарів",
     categories: ["Усі", "Одежда", "Обувь", "Аксессуары"],
@@ -636,17 +630,14 @@
   let activeDetailProduct = null;
   let activeMediaIndex = 0;
 
-  // Telegram Config
-  const TELEGRAM_USERNAME = "your_telegram_username"; // Укажите без @
+  const TELEGRAM_USERNAME = "your_telegram_username";
 
-  // DOM Elements
   const siteTitleEl = document.getElementById("siteTitle");
   const searchInput = document.getElementById("searchInput");
   const categoryChips = document.getElementById("categoryChips");
   const productGrid = document.getElementById("productGrid");
   const emptyState = document.getElementById("emptyState");
 
-  // Detail Elements
   const detailOverlay = document.getElementById("detailOverlay");
   const detailClose = document.getElementById("detailClose");
   const detailMain = document.getElementById("detailMain");
@@ -657,7 +648,6 @@
   const detailPrice = document.getElementById("detailPrice");
   const detailOrderBtn = document.getElementById("detailOrderBtn");
 
-  // Admin / Auth Elements
   const openAdminLoginBtn = document.getElementById("openAdminLogin");
   const loginOverlay = document.getElementById("loginOverlay");
   const loginPassword = document.getElementById("loginPassword");
@@ -677,7 +667,6 @@
   const adminProductsList = document.getElementById("adminProducts");
   const addProductBtn = document.getElementById("addProduct");
 
-  // СИНХРОНИЗАЦИЯ С FIREBASE FIRESTORE
   function listenToFirebase() {
     onSnapshot(catalogDocRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -704,7 +693,6 @@
     }
   }
 
-  // Render Functions
   function renderAll() {
     siteTitleEl.textContent = state.siteTitle;
     adminTitleInput.value = state.siteTitle;
@@ -776,7 +764,6 @@
     });
   }
 
-  // Detail Modal Logic
   window.openDetail = function(id) {
     const p = state.products.find(item => item.id === id);
     if (!p) return;
@@ -840,13 +827,11 @@
 
   detailClose.onclick = () => detailOverlay.classList.remove("open");
 
-  // Search Input
   searchInput.oninput = (e) => {
     searchQuery = e.target.value;
     renderProducts();
   };
 
-  // Auth & Admin Drawer
   openAdminLoginBtn.onclick = () => {
     if (isAdmin) {
       openAdminDrawer();
@@ -892,7 +877,6 @@
     closeAdminDrawer();
   };
 
-  // Admin State Updates
   adminTitleInput.onchange = (e) => {
     state.siteTitle = e.target.value;
     saveToFirebase(state);
@@ -989,19 +973,47 @@
     saveToFirebase(state);
   };
 
+  // ФУНКЦИЯ АВТОМАТИЧЕСКОГО СЖАТИЯ ИЗОБРАЖЕНИЙ
+  function compressImage(file, maxWidth, quality, callback) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+        callback(compressedDataUrl);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
   window.uploadPhoto = function(event, prodId, slotIndex) {
     const file = event.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
+
+    // Сжимаем до max-width: 800px и качества 70%
+    compressImage(file, 800, 0.7, function(compressedBase64) {
       const p = state.products.find(item => item.id === prodId);
       if (p) {
         if (!p.photos) p.photos = [];
-        p.photos[slotIndex] = e.target.result;
+        p.photos[slotIndex] = compressedBase64;
         saveToFirebase(state);
       }
-    };
-    reader.readAsDataURL(file);
+    });
   };
 
   window.removePhoto = function(prodId, slotIndex) {
