@@ -1,1178 +1,792 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Каталог товарів</title>
-  <style>
-    :root {
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
-      --accent: #38bdf8;
-      --accent-hover: #0284c7;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --danger: #ef4444;
-      --border: #334155;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      padding-bottom: 60px;
-    }
-
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background-color: rgba(15, 23, 42, 0.9);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--border);
-      padding: 16px;
-    }
-
-    .header-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .search-box {
-      position: relative;
-      flex-grow: 1;
-      max-width: 400px;
-    }
-
-    .search-box input {
-      width: 100%;
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background-color: var(--card-bg);
-      color: var(--text-main);
-      outline: none;
-    }
-
-    .search-box input:focus {
-      border-color: var(--accent);
-    }
-
-    .admin-btn-trigger {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      padding: 8px;
-    }
-
-    .admin-btn-trigger:hover {
-      color: var(--accent);
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 20px auto;
-      padding: 0 16px;
-    }
-
-    .categories {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 12px;
-      margin-bottom: 20px;
-    }
-
-    .chip {
-      background-color: var(--card-bg);
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-      padding: 8px 16px;
-      border-radius: 20px;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s;
-    }
-
-    .chip.active, .chip:hover {
-      background-color: var(--accent);
-      color: #000;
-      border-color: var(--accent);
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background-color: var(--card-bg);
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .card:hover {
-      transform: translateY(-4px);
-    }
-
-    .card-media {
-      position: relative;
-      width: 100%;
-      padding-top: 75%;
-      background-color: #0f172a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .card-media img {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .card-media svg {
-      position: absolute;
-      width: 48px;
-      height: 48px;
-      color: var(--border);
-    }
-
-    .photo-count {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-size: 0.75rem;
-    }
-
-    .card-body {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      flex-grow: 1;
-    }
-
-    .card-cat {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .card-name {
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .card-desc {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      margin-bottom: 16px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .card-price {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin-top: auto;
-      margin-bottom: 12px;
-    }
-
-    .order-btn {
-      width: 100%;
-      padding: 10px;
-      background-color: var(--accent);
-      color: #0f172a;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      text-decoration: none;
-      display: block;
-    }
-
-    .order-btn:hover {
-      background-color: var(--accent-hover);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 40px;
-      color: var(--text-muted);
-    }
-
-    .overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 200;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-    }
-
-    .overlay.open {
-      display: flex;
-    }
-
-    .modal {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      max-width: 600px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      position: relative;
-      padding: 20px;
-    }
-
-    .modal-close {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .detail-media-container {
-      width: 100%;
-      height: 300px;
-      background: #0f172a;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .detail-media-container img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    .detail-thumbs {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      margin-bottom: 16px;
-    }
-
-    .detail-thumb {
-      width: 60px;
-      height: 60px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-      cursor: pointer;
-      flex-shrink: 0;
-      background: #0f172a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .detail-thumb.active {
-      border-color: var(--accent);
-    }
-
-    .detail-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .drawer {
-      position: fixed;
-      top: 0;
-      right: -400px;
-      width: 100%;
-      max-width: 400px;
-      height: 100%;
-      background: var(--card-bg);
-      border-left: 1px solid var(--border);
-      z-index: 300;
-      transition: right 0.3s ease;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .drawer.open {
-      right: 0;
-    }
-
-    .drawer-header {
-      padding: 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .drawer-body {
-      padding: 16px;
-      overflow-y: auto;
-      flex-grow: 1;
-    }
-
-    .admin-section {
-      margin-bottom: 24px;
-      background: rgba(15, 23, 42, 0.5);
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-
-    .admin-section h3 {
-      font-size: 1rem;
-      margin-bottom: 12px;
-      color: var(--accent);
-    }
-
-    .field {
-      margin-bottom: 12px;
-    }
-
-    .field label {
-      display: block;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-    }
-
-    .field input, .field textarea, .field select {
-      width: 100%;
-      padding: 8px;
-      background: var(--bg-color);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text-main);
-      outline: none;
-    }
-
-    .btn {
-      padding: 8px 16px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      width: 100%;
-    }
-
-    .btn.primary {
-      background: var(--accent);
-      color: #0f172a;
-    }
-
-    .btn.danger {
-      background: var(--danger);
-      color: #fff;
-    }
-
-    .tag-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-
-    .tag {
-      background: var(--bg-color);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tag button {
-      background: none;
-      border: none;
-      color: var(--danger);
-      cursor: pointer;
-    }
-
-    .product-admin-card {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 12px;
-      background: var(--bg-color);
-    }
-
-    .admin-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .photo-slots {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-
-    .upload-box {
-      border: 1px dashed var(--border);
-      border-radius: 4px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      position: relative;
-      cursor: pointer;
-      overflow: hidden;
-      background: var(--card-bg);
-      text-align: center;
-    }
-
-    .upload-box input {
-      position: absolute;
-      opacity: 0;
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-    }
-
-    .upload-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .upload-box .remove-x {
-      position: absolute;
-      top: 2px;
-      right: 2px;
-      background: rgba(0, 0, 0, 0.7);
-      color: var(--danger);
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      z-index: 2;
-      cursor: pointer;
-    }
-
-    .stats-row {
-      font-size: 0.8rem;
-      margin-bottom: 8px;
-    }
-
-    .stats-flex {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 4px;
-    }
-
-    .progress-bar {
-      width: 100%;
-      background: var(--bg-color);
-      height: 6px;
-      border-radius: 3px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: var(--accent);
-      transition: width 0.3s;
-    }
-
-    .product-foot {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 8px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title id="pageTitle">Fashion Стиль — Інтернет-магазин одягу</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: {
+                50: '#fdf8f6', 100: '#f2e8e5', 600: '#8c6d62', 700: '#73574d', 800: '#59423a', 900: '#402e28'
+            } } } }
+        }
+    </script>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        input, select, textarea { font-size: 16px !important; }
+        header { padding-top: env(safe-area-inset-top, 0px); }
+        #mobileBottomBar { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+        #adminPanel, #cartDrawer { padding-top: env(safe-area-inset-top, 0px); }
+        body { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+        @media (min-width: 768px) { body { padding-bottom: 0; } }
+
+        .upload-slot {
+            aspect-ratio: 1/1; border: 1px dashed #d4d4d4; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; color: #737373; position: relative; overflow: hidden;
+            cursor: pointer; background: #fafafa; min-height: 44px;
+        }
+        .upload-slot img { width: 100%; height: 100%; object-fit: cover; }
+        .upload-slot input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .upload-slot .remove-x {
+            position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,.7); color: #fff;
+            width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 12px; z-index: 2; cursor: pointer;
+        }
+        .conn-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; }
+        .progress-bar { width:100%; background:#e5e5e5; height:6px; border-radius:3px; overflow:hidden; }
+        .progress-fill { height:100%; background:#73574d; transition:width .3s; }
+        .tag { display:inline-flex; align-items:center; gap:6px; border:1px solid #d4d4d4; background:#fafafa; padding:5px 6px 5px 12px; border-radius:20px; font-size:12px; margin:0 6px 6px 0; }
+        .tag button { background:none; border:none; color:#737373; cursor:pointer; padding:2px 4px; font-size:13px; }
+        .size-chip { border:1px solid #d4d4d4; border-radius:16px; padding:5px 12px; font-size:11px; cursor:pointer; background:#fff; }
+        .size-chip.active { background:#73574d; color:#fff; border-color:#73574d; }
+        .product-admin-card { border:1px solid #e5e5e5; border-radius:12px; padding:14px; margin-bottom:14px; background:#fafafa; }
+    </style>
 </head>
-<body>
+<body class="bg-brand-50 text-neutral-800 font-sans antialiased min-h-screen flex flex-col">
 
-<header>
-  <div class="header-container">
-    <h1 id="siteTitle">Каталог товарів</h1>
-    <div class="search-box">
-      <input type="text" id="searchInput" placeholder="Пошук товарів...">
-    </div>
-    <button class="admin-btn-trigger" id="openAdminLogin" title="Адмін-панель">⚙️</button>
-  </div>
-</header>
+    <!-- MAIN HEADER -->
+    <header class="bg-white border-b border-neutral-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-3 py-3 flex items-center justify-between gap-2">
+            <button onclick="window.filterCategory('all'); window.scrollTo({top:0, behavior:'smooth'});" class="flex items-center gap-2 text-left shrink-0">
+                <div id="headerLogoIcon" class="bg-brand-700 text-white w-9 h-9 rounded-lg flex items-center justify-center font-bold text-lg overflow-hidden">F</div>
+                <div>
+                    <span id="headerStoreName" class="text-base font-bold tracking-wider text-neutral-900 block leading-none">FASHION СТИЛЬ</span>
+                    <span id="connStatus" class="text-[9px] text-neutral-500 tracking-widest uppercase"><span class="conn-dot" style="background:#ccc;"></span>Підключення…</span>
+                </div>
+            </button>
 
-<div class="container">
-  <div class="categories" id="categoryChips"></div>
-  <div class="grid" id="productGrid"></div>
-  <div class="empty-state" id="emptyState" style="display: none;">Товарів не знайдено</div>
-</div>
+            <div class="flex-1 max-w-md mx-2">
+                <div class="relative">
+                    <input type="text" id="searchInput" placeholder="Пошук товарів..."
+                           class="w-full pl-8 pr-3 py-1.5 border border-neutral-300 rounded-full focus:outline-none focus:border-brand-700">
+                    <span class="absolute left-2.5 top-2 text-neutral-400 text-xs">🔍</span>
+                </div>
+            </div>
 
-<div class="overlay" id="detailOverlay">
-  <div class="modal">
-    <button class="modal-close" id="detailClose">&times;</button>
-    <div class="detail-media-container" id="detailMain"></div>
-    <div class="detail-thumbs" id="detailThumbs"></div>
-    <p class="card-cat" id="detailCat"></p>
-    <h2 id="detailName" style="margin-bottom: 8px;"></h2>
-    <p id="detailDesc" style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem; line-height: 1.4;"></p>
-    <div class="card-price" id="detailPrice" style="font-size: 1.5rem;"></div>
-    <a href="#" target="_blank" class="order-btn" id="detailOrderBtn">Замовити у Telegram</a>
-  </div>
-</div>
-
-<div class="overlay" id="loginOverlay">
-  <div class="modal" style="max-width: 320px;">
-    <h3 style="margin-bottom: 12px;">Вхід в адмін-панель</h3>
-    <div class="field">
-      <input type="password" id="loginPassword" placeholder="Введіть пароль">
-    </div>
-    <p id="loginError" style="color: var(--danger); font-size: 0.8rem; margin-bottom: 8px;"></p>
-    <button class="btn primary" id="loginSubmit">Увійти</button>
-    <button class="btn" id="loginCancel" style="margin-top: 6px; background: transparent; color: var(--text-muted);">Скасувати</button>
-  </div>
-</div>
-
-<div class="overlay" id="adminOverlay"></div>
-<aside class="drawer" id="adminDrawer">
-  <div class="drawer-header">
-    <h2>Управління</h2>
-    <button class="modal-close" id="adminClose" style="position: static;">&times;</button>
-  </div>
-  <div class="drawer-body">
-
-    <div class="admin-section">
-      <h3>Пам'ять та ліміти</h3>
-      <div class="stats-row">
-        <div class="stats-flex">
-          <span style="color: var(--text-muted);">Документ Firestore (ліміт 1 МБ):</span>
-          <span id="docSizeText">0 / 1024 КБ</span>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="window.requestAdminAccess()" class="p-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-sm font-medium transition min-w-[40px] min-h-[40px]" title="Адмін-панель">⚙️</button>
+                <button onclick="window.toggleCartDrawer()" class="relative flex items-center gap-1 px-3 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-medium transition shadow-sm min-h-[40px]">
+                    🛒 <span id="cartBadge" class="bg-amber-400 text-neutral-900 text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
+                </button>
+            </div>
         </div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="docSizeBar" style="width: 0%;"></div>
+
+        <!-- CATEGORIES SCROLL (динамічний, з state.categories) -->
+        <nav class="bg-brand-800 text-white px-2">
+            <div id="categoryNav" class="max-w-7xl mx-auto flex items-center gap-4 overflow-x-auto py-2.5 text-xs whitespace-nowrap"></div>
+        </nav>
+    </header>
+
+    <section class="max-w-7xl mx-auto px-3 mt-3">
+        <div id="dynamicBannerContainer" class="relative rounded-xl overflow-hidden shadow-md h-44 bg-neutral-900 flex items-center"></div>
+    </section>
+
+    <main class="max-w-7xl mx-auto px-3 py-4 flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-4">
+
+        <aside class="space-y-3 lg:col-span-1 bg-white p-3 rounded-xl shadow-sm border border-neutral-200 h-fit">
+            <div class="flex justify-between items-center cursor-pointer lg:cursor-default" onclick="window.toggleMobileFilters()">
+                <h3 class="font-bold text-sm text-neutral-900">Фільтри та сортування</h3>
+                <span id="filterToggleIcon" class="lg:hidden text-neutral-500 font-bold text-xs">▼</span>
+            </div>
+
+            <div id="filterContent" class="space-y-3 hidden lg:block pt-2">
+                <div>
+                    <label class="block text-[11px] font-medium text-neutral-700 mb-1">Ціна (UAH):</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="number" id="minPrice" placeholder="Від" oninput="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
+                        <span>-</span>
+                        <input type="number" id="maxPrice" placeholder="До" oninput="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-neutral-700 mb-1">Розмір:</label>
+                    <div class="flex flex-wrap gap-1.5" id="sizeFiltersContainer"></div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-medium text-neutral-700 mb-1">Сортування:</label>
+                    <select id="sortOrder" onchange="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
+                        <option value="default">За замовчуванням</option>
+                        <option value="cheap">Від дешевих до дорогих</option>
+                        <option value="expensive">Від дорогих до дешевих</option>
+                    </select>
+                </div>
+
+                <button onclick="window.resetFilters()" class="w-full py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium transition">Скинути фільтри</button>
+            </div>
+        </aside>
+
+        <section class="lg:col-span-3 flex flex-col gap-3">
+            <div class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-neutral-200 shadow-sm">
+                <h1 id="catalogTitle" class="text-sm font-bold text-neutral-900">Каталог товарів</h1>
+                <div class="text-[11px] text-neutral-500" id="productCount">Знайдено: 0</div>
+            </div>
+            <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5"></div>
+        </section>
+    </main>
+
+    <div id="mobileBottomBar" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 z-40 flex justify-around items-center pt-2 px-1 shadow-2xl">
+        <button onclick="window.filterCategory('all'); window.scrollTo({top:0, behavior:'smooth'});" class="flex flex-col items-center text-neutral-600 hover:text-brand-700 text-[10px] min-h-[44px] justify-center px-2"><span class="text-base">🏠</span> Головна</button>
+        <button onclick="window.toggleCartDrawer()" class="flex flex-col items-center text-neutral-600 hover:text-brand-700 text-[10px] relative min-h-[44px] justify-center px-2"><span class="text-base">🛒</span> Кошик</button>
+        <button onclick="window.open('https://t.me/yuli666666', '_blank')" class="flex flex-col items-center text-neutral-600 hover:text-brand-700 text-[10px] min-h-[44px] justify-center px-2"><span class="text-base">💬</span> Telegram</button>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div id="adminOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.toggleAdminPanel()"></div>
+    <div id="adminPanel" class="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
+            <h2 class="font-bold text-lg">Панель адміністратора</h2>
+            <button onclick="window.toggleAdminPanel()" class="text-white hover:text-amber-300 text-xl font-bold w-10 h-10">&times;</button>
         </div>
-      </div>
-      <div class="stats-row" style="margin-top: 12px;">
-        <div class="stats-flex">
-          <span style="color: var(--text-muted);">Фото у Storage (ліміт 1 ГБ):</span>
-          <span id="gbSizeText">0 / 1024 МБ · 0 фото</span>
+        <div class="p-6 flex-1 overflow-y-auto space-y-6">
+
+            <!-- ПАМ'ЯТЬ ТА ЛІМІТИ -->
+            <div class="bg-neutral-50 p-4 rounded-xl border">
+                <h3 class="font-bold text-sm text-neutral-900 mb-3">Пам'ять та ліміти</h3>
+                <div class="text-xs mb-2">
+                    <div class="flex justify-between mb-1"><span class="text-neutral-500">Документ бази даних (ліміт 1 МБ):</span><span id="docSizeText">0 / 1024 КБ</span></div>
+                    <div class="progress-bar"><div class="progress-fill" id="docSizeBar" style="width:0%;"></div></div>
+                </div>
+                <div class="text-xs mt-3 mb-2">
+                    <div class="flex justify-between mb-1"><span class="text-neutral-500">Фото у сховищі (ліміт 1 ГБ):</span><span id="gbSizeText">0 / 1024 МБ · 0 фото</span></div>
+                    <div class="progress-bar"><div class="progress-fill" id="gbSizeBar" style="width:0%;"></div></div>
+                </div>
+                <button onclick="window.updateStorageStats()" class="w-full mt-2 py-2 bg-white border border-neutral-300 text-neutral-600 rounded-lg text-xs">Оновити лічильник</button>
+            </div>
+
+            <!-- НАЛАШТУВАННЯ МАГАЗИНУ -->
+            <div class="bg-neutral-50 p-4 rounded-xl border space-y-3">
+                <h3 class="font-bold text-sm text-neutral-900">Налаштування магазину</h3>
+                <div>
+                    <label class="block text-xs text-neutral-600 mb-1">Назва магазину:</label>
+                    <input type="text" id="adminStoreNameInput" class="w-full px-3 py-2 border rounded-lg" placeholder="Fashion Стиль">
+                </div>
+                <div>
+                    <label class="block text-xs text-neutral-600 mb-1">Логотип магазину:</label>
+                    <input type="file" id="adminLogoFile" accept="image/*" class="w-full text-xs text-neutral-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-700 file:text-white hover:file:bg-brand-800">
+                </div>
+                <button onclick="window.saveStoreSettings()" class="w-full py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-medium">Зберегти налаштування бренду</button>
+            </div>
+
+            <!-- РОЗДІЛИ САЙТУ (категорії) -->
+            <div class="bg-neutral-50 p-4 rounded-xl border">
+                <h3 class="font-bold text-sm text-neutral-900 mb-3">Розділи сайту (категорії)</h3>
+                <div id="adminCategoryTags" class="mb-2"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="newCategoryInput" placeholder="Новий розділ" class="w-full px-3 py-2 border rounded-lg">
+                    <button onclick="window.addCategory()" class="px-4 bg-brand-700 text-white rounded-lg font-bold">+</button>
+                </div>
+            </div>
+
+            <!-- РОЗМІРИ (фільтри) -->
+            <div class="bg-neutral-50 p-4 rounded-xl border">
+                <h3 class="font-bold text-sm text-neutral-900 mb-3">Розміри (для фільтра і карток товарів)</h3>
+                <div id="adminSizeTags" class="mb-2"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="newSizeInput" placeholder="Новий розмір" class="w-full px-3 py-2 border rounded-lg">
+                    <button onclick="window.addSize()" class="px-4 bg-brand-700 text-white rounded-lg font-bold">+</button>
+                </div>
+            </div>
+
+            <!-- ТОВАРИ -->
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-sm text-neutral-900">Товари</h3>
+                    <button onclick="window.addNewProduct()" class="px-3 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-bold">➕ Додати товар</button>
+                </div>
+                <div id="adminProductList" class="space-y-3"></div>
+            </div>
+
+            <div class="pt-2">
+                <button onclick="window.toggleAdminPanel()" class="w-full py-2.5 border border-rose-300 text-rose-600 rounded-lg text-sm font-medium">Вийти з панелі</button>
+            </div>
         </div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="gbSizeBar" style="width: 0%;"></div>
+    </div>
+
+    <!-- CART DRAWER -->
+    <div id="cartOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.toggleCartDrawer()"></div>
+    <div id="cartDrawer" class="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+        <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
+            <h2 class="font-bold text-lg">Ваш кошик</h2>
+            <button onclick="window.toggleCartDrawer()" class="text-white hover:text-amber-300 text-xl font-bold w-10 h-10">&times;</button>
         </div>
-      </div>
-      <p style="font-size:0.72rem;color:var(--text-muted);margin-top:8px;">
-        Підрахунок фото/розміру оновлюється при відкритті цієї панелі — натисніть «Оновити» за потреби.
-      </p>
-      <button class="btn" id="refreshStorageStats" style="background:transparent;border:1px solid var(--border);color:var(--text-muted);margin-top:6px;">Оновити лічильник</button>
+        <div id="cartItemsContainer" class="p-4 flex-1 overflow-y-auto space-y-3"></div>
+        <div class="p-4 border-t bg-neutral-50 space-y-3" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));">
+            <div class="flex justify-between font-bold text-neutral-900 text-sm"><span>Загальна сума:</span><span id="cartTotalPrice">0 UAH</span></div>
+            <button onclick="window.checkoutTelegram()" class="w-full py-3 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-xl font-bold text-xs transition shadow-md flex items-center justify-center gap-2 min-h-[44px]">✈️ Оформити замовлення в Telegram (@yuli666666)</button>
+        </div>
     </div>
 
-    <div class="admin-section">
-      <h3>Загальні налаштування</h3>
-      <div class="field">
-        <label>Назва магазину</label>
-        <input type="text" id="adminTitle">
-      </div>
+    <!-- PRODUCT DETAIL MODAL -->
+    <div id="productModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-3">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
+            <button onclick="window.closeProductModal()" class="absolute right-3 top-3 bg-neutral-100 hover:bg-neutral-200 w-8 h-8 rounded-full flex items-center justify-center text-neutral-700 font-bold z-10">&times;</button>
+            <div id="modalContent" class="p-4 space-y-3 max-h-[85vh] overflow-y-auto"></div>
+        </div>
     </div>
 
-    <div class="admin-section">
-      <h3>Категорії</h3>
-      <div class="tag-list" id="adminCategoryTags"></div>
-      <div class="admin-row">
-        <input type="text" id="newCategory" placeholder="Нова категория">
-        <button class="btn primary" id="addCategory" style="width: auto;">+</button>
-      </div>
-    </div>
+    <footer class="bg-neutral-900 text-neutral-300 pt-8 pb-8 md:pb-6 border-t border-neutral-800 mt-auto text-xs">
+        <div class="max-w-7xl mx-auto px-3 grid grid-cols-1 gap-6 mb-6">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <div id="footerLogoIcon" class="bg-brand-700 text-white w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm overflow-hidden">F</div>
+                    <span id="footerStoreName" class="text-white font-bold tracking-wider">FASHION СТИЛЬ</span>
+                </div>
+                <p class="text-neutral-400 text-[11px] mb-2">Інтернет-магазин сучасного одягу та аксесуарів.</p>
+                <a href="https://t.me/yuli666666" target="_blank" class="text-amber-400 underline font-medium text-[11px]">Telegram: @yuli666666</a>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-3 pt-4 border-t border-neutral-800 text-center text-[10px] text-neutral-500">© 2026 Fashion Стиль. Замовлення приймаються в Telegram.</div>
+    </footer>
 
-    <div class="admin-section">
-      <h3>Товари</h3>
-      <button class="btn primary" id="addProduct" style="margin-bottom: 12px;">+ Додати товар</button>
-      <div id="adminProducts"></div>
-    </div>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+      import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-    <div class="admin-section" style="background: transparent; border: none; padding: 0;">
-      <button class="btn danger" id="adminLogout">Вийти з панелі</button>
-    </div>
-
-  </div>
-</aside>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-  import {
-    getStorage, ref as storageRef, uploadBytes, getDownloadURL,
-    deleteObject, listAll, getMetadata
-  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-
-  /* ==========================================================================
-     ВАЖЛИВО: у консолі Firebase (console.firebase.google.com) для цього
-     проєкту потрібно один раз увімкнути Storage:
-     Build → Storage → Get started (достатньо безкоштовного плану Spark).
-     Без цього кроку завантаження фото працювати не буде.
-     ========================================================================== */
-  const firebaseConfig = {
-    apiKey: "AIzaSyDc-8E2Sqzp27PPnNf9MYys9aaapD9N2xk",
-    authDomain: "premium-luxe-shop.firebaseapp.com",
-    databaseURL: "https://premium-luxe-shop-default-rtdb.firebaseio.com",
-    projectId: "premium-luxe-shop",
-    storageBucket: "premium-luxe-shop.firebasestorage.app",
-    messagingSenderId: "461518983018",
-    appId: "1:461518983018:web:fae25cc1dec5da07c35f13"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
-  const catalogDocRef = doc(db, "catalog", "mainData");
-
-  /* Тепер photos — масив об'єктів { url, path }, а не base64-рядків.
-     url  — публічне посилання на файл у Firebase Storage (його бачать усі);
-     path — внутрішній шлях у Storage, потрібен лише щоб коректно видалити файл. */
-  let state = {
-    siteTitle: "Каталог товарів",
-    categories: ["Усі", "Одежда", "Обувь", "Аксессуары"],
-    products: []
-  };
-
-  let currentCategory = "Усі";
-  let searchQuery = "";
-  let isAdmin = false;
-  let activeDetailProduct = null;
-  let activeMediaIndex = 0;
-
-  const ADMIN_PASSWORD = "admin123";
-  const TELEGRAM_USERNAME = "your_telegram_username";
-
-  const siteTitleEl = document.getElementById("siteTitle");
-  const searchInput = document.getElementById("searchInput");
-  const categoryChips = document.getElementById("categoryChips");
-  const productGrid = document.getElementById("productGrid");
-  const emptyState = document.getElementById("emptyState");
-
-  const detailOverlay = document.getElementById("detailOverlay");
-  const detailClose = document.getElementById("detailClose");
-  const detailMain = document.getElementById("detailMain");
-  const detailThumbs = document.getElementById("detailThumbs");
-  const detailCat = document.getElementById("detailCat");
-  const detailName = document.getElementById("detailName");
-  const detailDesc = document.getElementById("detailDesc");
-  const detailPrice = document.getElementById("detailPrice");
-  const detailOrderBtn = document.getElementById("detailOrderBtn");
-
-  const openAdminLoginBtn = document.getElementById("openAdminLogin");
-  const loginOverlay = document.getElementById("loginOverlay");
-  const loginPassword = document.getElementById("loginPassword");
-  const loginError = document.getElementById("loginError");
-  const loginSubmit = document.getElementById("loginSubmit");
-  const loginCancel = document.getElementById("loginCancel");
-
-  const adminOverlay = document.getElementById("adminOverlay");
-  const adminDrawer = document.getElementById("adminDrawer");
-  const adminClose = document.getElementById("adminClose");
-  const adminLogout = document.getElementById("adminLogout");
-  const adminTitleInput = document.getElementById("adminTitle");
-  const adminCategoryTags = document.getElementById("adminCategoryTags");
-  const newCategoryInput = document.getElementById("newCategory");
-  const addCategoryBtn = document.getElementById("addCategory");
-  const adminProductsList = document.getElementById("adminProducts");
-  const addProductBtn = document.getElementById("addProduct");
-  const refreshStorageStatsBtn = document.getElementById("refreshStorageStats");
-
-  /* ---------- Завантаження / збереження каталогу (тексти, ціни, посилання на фото) ---------- */
-  async function loadFromFirebase() {
-    try {
-      const docSnap = await getDoc(catalogDocRef);
-      if (docSnap.exists()) {
-        const remoteData = docSnap.data();
-        state = {
-          siteTitle: remoteData.siteTitle || "Каталог товарів",
-          categories: remoteData.categories || ["Усі"],
-          products: remoteData.products || []
-        };
-      } else {
-        await saveToFirebase(state);
-      }
-      renderAll();
-    } catch (e) {
-      console.error("Помилка завантаження з Firebase: ", e);
-    }
-  }
-
-  async function saveToFirebase(newData) {
-    try {
-      await setDoc(catalogDocRef, newData);
-      updateDocSizeCounter();
-    } catch (e) {
-      console.error("Помилка збереження в Firebase: ", e);
-      alert("Не вдалося зберегти дані на сервер! Документ каталогу міг перевищити ліміт Firestore (1 МБ) — перевірте, чи не забагато тексту в описах, і що фото зберігаються через Storage, а не напряму в документі.");
-    }
-  }
-
-  /* ---------- Лічильник розміру документа Firestore (текст + посилання) ---------- */
-  function updateDocSizeCounter() {
-    const bytes = new Blob([JSON.stringify(state)]).size;
-    const docLimitBytes = 1048576;
-    const kb = (bytes / 1024).toFixed(1);
-    const docPercent = Math.min((bytes / docLimitBytes) * 100, 100).toFixed(1);
-    document.getElementById("docSizeText").textContent = `${kb} / 1024 КБ`;
-    document.getElementById("docSizeBar").style.width = `${docPercent}%`;
-  }
-
-  /* ---------- Лічильник реального обсягу фото у Firebase Storage ---------- */
-  async function updateStorageStats() {
-    const gbSizeText = document.getElementById("gbSizeText");
-    const gbSizeBar = document.getElementById("gbSizeBar");
-    gbSizeText.textContent = "Підрахунок…";
-    try {
-      const rootRef = storageRef(storage, "products");
-      const rootList = await listAll(rootRef);
-      let totalBytes = 0;
-      let totalFiles = 0;
-
-      for (const folderRef of rootList.prefixes) {
-        const inner = await listAll(folderRef);
-        for (const fileRef of inner.items) {
-          try {
-            const meta = await getMetadata(fileRef);
-            totalBytes += meta.size || 0;
-            totalFiles += 1;
-          } catch (err) { /* файл міг бути видалений паралельно — пропускаємо */ }
-        }
-      }
-
-      const gbLimitBytes = 1073741824; // 1 ГБ
-      const mb = (totalBytes / (1024 * 1024)).toFixed(2);
-      const percent = Math.min((totalBytes / gbLimitBytes) * 100, 100).toFixed(3);
-      gbSizeText.textContent = `${mb} / 1024 МБ · ${totalFiles} фото`;
-      gbSizeBar.style.width = `${percent}%`;
-    } catch (e) {
-      console.error("Не вдалося порахувати обсяг Storage:", e);
-      gbSizeText.textContent = "Помилка підрахунку";
-    }
-  }
-
-  refreshStorageStatsBtn.onclick = updateStorageStats;
-
-  /* ---------- Рендер ---------- */
-  function renderAll() {
-    siteTitleEl.textContent = state.siteTitle;
-    if (document.activeElement !== adminTitleInput) {
-      adminTitleInput.value = state.siteTitle;
-    }
-    renderCategories();
-    renderProducts();
-    if (isAdmin) {
-      renderAdminCategories();
-      renderAdminProducts();
-      updateDocSizeCounter();
-    }
-  }
-
-  function renderCategories() {
-    categoryChips.innerHTML = "";
-    state.categories.forEach(cat => {
-      const btn = document.createElement("button");
-      btn.className = `chip ${cat === currentCategory ? "active" : ""}`;
-      btn.textContent = cat;
-      btn.onclick = () => {
-        currentCategory = cat;
-        renderCategories();
-        renderProducts();
+      const firebaseConfig = {
+        apiKey: "AIzaSyDc-8E2Sqzp27PPnNf9MYys9aaapD9N2xk",
+        authDomain: "premium-luxe-shop.firebaseapp.com",
+        databaseURL: "https://premium-luxe-shop-default-rtdb.firebaseio.com",
+        projectId: "premium-luxe-shop",
+        storageBucket: "premium-luxe-shop.firebasestorage.app",
+        messagingSenderId: "461518983018",
+        appId: "1:461518983018:web:fae25cc1dec5da07c35f13"
       };
-      categoryChips.appendChild(btn);
-    });
-  }
 
-  function renderProducts() {
-    productGrid.innerHTML = "";
-    const filtered = state.products.filter(p => {
-      const matchesCat = (currentCategory === "Усі") || (p.category === currentCategory);
-      const matchesSearch = (p.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            (p.desc || "").toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCat && matchesSearch;
-    });
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const storage = getStorage(app);
+      const catalogRef = doc(db, "catalog", "fashionStyleData");
 
-    if (filtered.length === 0) {
-      emptyState.style.display = "block";
-      return;
-    }
-    emptyState.style.display = "none";
+      const ADMIN_PASSWORD = "23758";
+      const TELEGRAM_USERNAME = "yuli666666";
 
-    filtered.forEach(p => {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      const firstPhoto = (p.photos && p.photos.length > 0) ? p.photos[0] : null;
-      const mediaThumb = firstPhoto
-        ? `<img src="${firstPhoto.url}" alt="${p.title}">`
-        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
-
-      const photoCountBadge = p.photos && p.photos.length > 1
-        ? `<span class="photo-count">+${p.photos.length - 1}</span>`
-        : "";
-
-      card.innerHTML = `
-        <div class="card-media">
-          ${mediaThumb}
-          ${photoCountBadge}
-        </div>
-        <div class="card-body">
-          <p class="card-cat">${p.category || ""}</p>
-          <h3 class="card-name">${p.title}</h3>
-          <p class="card-desc">${p.desc}</p>
-          <p class="card-price">${p.price} ₴</p>
-          <button class="order-btn" onclick="event.stopPropagation(); openDetail('${p.id}')">Детальніше</button>
-        </div>
-      `;
-      card.onclick = () => openDetail(p.id);
-      productGrid.appendChild(card);
-    });
-  }
-
-  window.openDetail = function(id) {
-    const p = state.products.find(item => item.id === id);
-    if (!p) return;
-    activeDetailProduct = p;
-    activeMediaIndex = 0;
-
-    detailCat.textContent = p.category || "";
-    detailName.textContent = p.title;
-    detailDesc.textContent = p.desc;
-    detailPrice.textContent = `${p.price} ₴`;
-
-    const message = encodeURIComponent(`Доброго дня! Цікавить товар: ${p.title} (Ціна: ${p.price} ₴)`);
-    detailOrderBtn.href = `https://t.me/${TELEGRAM_USERNAME}?text=${message}`;
-
-    renderDetailMedia();
-    detailOverlay.classList.add("open");
-  };
-
-  function renderDetailMedia() {
-    if (!activeDetailProduct) return;
-    const mediaList = (activeDetailProduct.photos || []).map(p => ({ type: 'image', url: p.url }));
-
-    detailMain.innerHTML = "";
-    detailThumbs.innerHTML = "";
-
-    if (mediaList.length === 0) {
-      detailMain.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`;
-      return;
-    }
-
-    const currentMedia = mediaList[activeMediaIndex] || mediaList[0];
-    detailMain.innerHTML = `<img src="${currentMedia.url}" alt="">`;
-
-    if (mediaList.length > 1) {
-      mediaList.forEach((item, idx) => {
-        const thumb = document.createElement("div");
-        thumb.className = `detail-thumb ${idx === activeMediaIndex ? "active" : ""}`;
-        thumb.innerHTML = `<img src="${item.url}" alt="">`;
-        thumb.onclick = () => {
-          activeMediaIndex = idx;
-          renderDetailMedia();
-        };
-        detailThumbs.appendChild(thumb);
-      });
-    }
-  }
-
-  detailClose.onclick = () => detailOverlay.classList.remove("open");
-
-  searchInput.oninput = (e) => {
-    searchQuery = e.target.value;
-    renderProducts();
-  };
-
-  openAdminLoginBtn.onclick = () => {
-    if (isAdmin) {
-      openAdminDrawer();
-    } else {
-      loginOverlay.classList.add("open");
-    }
-  };
-
-  loginCancel.onclick = () => {
-    loginOverlay.classList.remove("open");
-    loginError.textContent = "";
-    loginPassword.value = "";
-  };
-
-  loginSubmit.onclick = () => {
-    if (loginPassword.value === ADMIN_PASSWORD) {
-      isAdmin = true;
-      loginOverlay.classList.remove("open");
-      loginError.textContent = "";
-      loginPassword.value = "";
-      openAdminDrawer();
-      renderAll();
-      updateStorageStats();
-    } else {
-      loginError.textContent = "Невірний пароль!";
-    }
-  };
-
-  function openAdminDrawer() {
-    adminOverlay.classList.add("open");
-    adminDrawer.classList.add("open");
-  }
-
-  function closeAdminDrawer() {
-    adminOverlay.classList.remove("open");
-    adminDrawer.classList.remove("open");
-  }
-
-  adminClose.onclick = closeAdminDrawer;
-  adminOverlay.onclick = closeAdminDrawer;
-
-  adminLogout.onclick = () => {
-    isAdmin = false;
-    closeAdminDrawer();
-  };
-
-  adminTitleInput.onchange = (e) => {
-    state.siteTitle = e.target.value;
-    saveToFirebase(state);
-    renderAll();
-  };
-
-  function renderAdminCategories() {
-    adminCategoryTags.innerHTML = "";
-    state.categories.forEach(cat => {
-      if (cat === "Усі") return;
-      const tag = document.createElement("div");
-      tag.className = "tag";
-      tag.innerHTML = `${cat} <button onclick="removeCategory('${cat}')">×</button>`;
-      adminCategoryTags.appendChild(tag);
-    });
-  }
-
-  window.removeCategory = function(catName) {
-    state.categories = state.categories.filter(c => c !== catName);
-    saveToFirebase(state);
-    renderAll();
-  };
-
-  addCategoryBtn.onclick = () => {
-    const val = newCategoryInput.value.trim();
-    if (val && !state.categories.includes(val)) {
-      state.categories.push(val);
-      newCategoryInput.value = "";
-      saveToFirebase(state);
-      renderAll();
-    }
-  };
-
-  function renderAdminProducts() {
-    adminProductsList.innerHTML = "";
-    state.products.forEach((p) => {
-      const card = document.createElement("div");
-      card.className = "product-admin-card";
-
-      let photosHtml = "";
-      for (let i = 0; i < 6; i++) {
-        const photo = (p.photos && p.photos[i]) ? p.photos[i] : null;
-        photosHtml += `
-          <div class="upload-box">
-            ${photo
-              ? `<img src="${photo.url}"><span class="remove-x" onclick="removePhoto('${p.id}',${i})">×</span>`
-              : `+ Фото`}
-            <input type="file" accept="image/*" onchange="uploadPhoto(event, '${p.id}', ${i})">
-          </div>
-        `;
-      }
-
-      card.innerHTML = `
-        <div class="admin-row">
-          <input type="text" value="${p.title || ''}" placeholder="Назва" onchange="updateProduct('${p.id}', 'title', this.value)">
-          <input type="number" value="${p.price || 0}" placeholder="Ціна" style="max-width:100px;" onchange="updateProduct('${p.id}', 'price', Number(this.value))">
-        </div>
-        <div class="admin-row">
-          <select onchange="updateProduct('${p.id}', 'category', this.value)">
-            ${state.categories.filter(c => c !== "Усі").map(c => `<option value="${c}" ${c === p.category ? "selected" : ""}>${c}</option>`).join("")}
-          </select>
-        </div>
-        <div class="admin-row">
-          <textarea placeholder="Опис товару..." onchange="updateProduct('${p.id}', 'desc', this.value)">${p.desc || ''}</textarea>
-        </div>
-        <div class="photo-slots">${photosHtml}</div>
-        <div class="product-foot">
-          <button class="btn danger" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteProduct('${p.id}')">Видалити товар</button>
-        </div>
-      `;
-      adminProductsList.appendChild(card);
-    });
-  }
-
-  window.updateProduct = function(id, key, value) {
-    const p = state.products.find(item => item.id === id);
-    if (p) {
-      p[key] = value;
-      saveToFirebase(state);
-      renderProducts();
-    }
-  };
-
-  window.deleteProduct = function(id) {
-    state.products = state.products.filter(item => item.id !== id);
-    saveToFirebase(state);
-    renderAdminProducts();
-    renderProducts();
-  };
-
-  addProductBtn.onclick = () => {
-    const newProd = {
-      id: "prod_" + Date.now(),
-      title: "Новий товар",
-      category: state.categories[1] || "Одежда",
-      price: 0,
-      desc: "",
-      photos: []
-    };
-    state.products.push(newProd);
-    saveToFirebase(state);
-    renderAdminProducts();
-    renderProducts();
-  };
-
-  /* ---------- Стиснення фото перед завантаженням (менше вага — швидше відкривається) ---------- */
-  function compressImage(file, maxWidth, quality) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
+      const DEFAULT_STATE = {
+        storeName: "Fashion Стиль",
+        storeLogo: null,
+        categories: ["Жіночий одяг", "Чоловічий одяг", "Верхній одяг", "Взуття", "Аксесуари"],
+        sizes: ["XS", "S", "M", "L", "XL"],
+        products: [
+          {
+            id: 1,
+            title: "Куртка жіноча",
+            price: 500,
+            category: "Верхній одяг",
+            sizes: ["M"],
+            color: "чорний",
+            material: "Текстиль",
+            images: [{ url: "https://images.unsplash.com/photo-1543076447-215ad9ba6923?auto=format&fit=crop&w=600&q=80", path: null }],
+            desc: "Жіноча куртка. Колір: чорний, розмір: M."
           }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-
-          canvas.toBlob((blob) => {
-            if (blob) resolve(blob); else reject(new Error("Не вдалося стиснути зображення"));
-          }, "image/jpeg", quality);
-        };
-        img.onerror = reject;
-        img.src = e.target.result;
+        ]
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
 
-  /* ---------- Завантаження фото у Firebase Storage ---------- */
-  window.uploadPhoto = async function(event, prodId, slotIndex) {
-    const file = event.target.files[0];
-    if (!file) return;
+      let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+      let isAdmin = false;
+      let currentCategory = 'all';
+      let selectedSizes = [];
+      let cart = [];
 
-    const box = event.target.closest(".upload-box");
-    if (box) box.style.opacity = "0.5";
+      const connStatusEl = document.getElementById('connStatus');
 
-    try {
-      const blob = await compressImage(file, 1280, 0.72);
+      onSnapshot(catalogRef, async (snap) => {
+        if (!snap.exists()) { await setDoc(catalogRef, DEFAULT_STATE); return; }
+        state = snap.data();
+        if (!state.categories) state.categories = DEFAULT_STATE.categories.slice();
+        if (!state.sizes) state.sizes = DEFAULT_STATE.sizes.slice();
+        connStatusEl.innerHTML = '<span class="conn-dot" style="background:#22c55e;"></span>Онлайн';
+        renderAll();
+      }, (err) => {
+        console.error(err);
+        connStatusEl.innerHTML = '<span class="conn-dot" style="background:#ef4444;"></span>Немає з’єднання';
+      });
 
-      const path = `products/${prodId}/${slotIndex}_${Date.now()}.jpg`;
-      const fileRef = storageRef(storage, path);
-      await uploadBytes(fileRef, blob, { contentType: "image/jpeg" });
-      const url = await getDownloadURL(fileRef);
+      async function saveState() {
+        await setDoc(catalogRef, state);
+        updateDocSizeCounter();
+      }
 
-      const p = state.products.find(item => item.id === prodId);
-      if (p) {
-        if (!p.photos) p.photos = [];
-        const oldPhoto = p.photos[slotIndex];
-        p.photos[slotIndex] = { url, path };
-        await saveToFirebase(state);
-        renderAdminProducts();
-        renderProducts();
-        updateStorageStats();
+      function updateDocSizeCounter() {
+        const bytes = new Blob([JSON.stringify(state)]).size;
+        const kb = (bytes / 1024).toFixed(1);
+        const percent = Math.min((bytes / 1048576) * 100, 100).toFixed(1);
+        document.getElementById('docSizeText').innerText = `${kb} / 1024 КБ`;
+        document.getElementById('docSizeBar').style.width = `${percent}%`;
+      }
 
-        // якщо в цьому слоті вже було інше фото — видаляємо старий файл зі Storage
-        if (oldPhoto && oldPhoto.path && oldPhoto.path !== path) {
-          try { await deleteObject(storageRef(storage, oldPhoto.path)); } catch (e) { /* ігноруємо */ }
+      window.updateStorageStats = async function() {
+        const textEl = document.getElementById('gbSizeText');
+        const barEl = document.getElementById('gbSizeBar');
+        textEl.innerText = "Підрахунок…";
+        try {
+          let totalBytes = 0, totalFiles = 0;
+          for (const folder of ['products', 'branding']) {
+            const folderRef = storageRef(storage, folder);
+            let list;
+            try { list = await listAll(folderRef); } catch (e) { continue; }
+            for (const fileRef of list.items) {
+              try { const meta = await getMetadata(fileRef); totalBytes += meta.size || 0; totalFiles++; } catch (e) {}
+            }
+          }
+          const mb = (totalBytes / (1024*1024)).toFixed(2);
+          const percent = Math.min((totalBytes / 1073741824) * 100, 100).toFixed(3);
+          textEl.innerText = `${mb} / 1024 МБ · ${totalFiles} фото`;
+          barEl.style.width = `${percent}%`;
+        } catch (e) {
+          console.error(e);
+          textEl.innerText = "Помилка підрахунку";
         }
+      };
+
+      function compressImage(file, maxWidth, maxHeight, quality) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let w = img.width, h = img.height;
+              if (w > h) { if (w > maxWidth) { h *= maxWidth / w; w = maxWidth; } }
+              else { if (h > maxHeight) { w *= maxHeight / h; h = maxHeight; } }
+              canvas.width = w; canvas.height = h;
+              canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+              canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('compress failed')), 'image/jpeg', quality);
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
       }
-    } catch (e) {
-      console.error("Помилка завантаження фото:", e);
-      alert("Не вдалося завантажити фото. Перевірте, чи увімкнено Firebase Storage для цього проєкту і чи дозволяють правила доступу запис.");
-    } finally {
-      if (box) box.style.opacity = "1";
-      event.target.value = "";
-    }
-  };
 
-  window.removePhoto = async function(prodId, slotIndex) {
-    const p = state.products.find(item => item.id === prodId);
-    if (p && p.photos && p.photos[slotIndex]) {
-      const photo = p.photos[slotIndex];
-      p.photos.splice(slotIndex, 1);
-      await saveToFirebase(state);
-      renderAdminProducts();
-      renderProducts();
-      updateStorageStats();
-      if (photo.path) {
-        try { await deleteObject(storageRef(storage, photo.path)); } catch (e) { /* файл міг вже бути видалений */ }
+      async function uploadImage(file, folder, maxSize = 1000, quality = 0.75) {
+        const blob = await compressImage(file, maxSize, maxSize, quality);
+        const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2,8)}.jpg`;
+        const fileRef = storageRef(storage, path);
+        await uploadBytes(fileRef, blob, { contentType: 'image/jpeg' });
+        const url = await getDownloadURL(fileRef);
+        return { url, path };
       }
-    }
-  };
 
-  loadFromFirebase();
-</script>
+      async function deleteImageSafe(imgObj) {
+        if (imgObj && imgObj.path) { try { await deleteObject(storageRef(storage, imgObj.path)); } catch (e) {} }
+      }
 
+      window.requestAdminAccess = function() {
+        const pwd = prompt("Введіть пароль адміністратора:");
+        if (pwd === ADMIN_PASSWORD) { isAdmin = true; window.toggleAdminPanel(); }
+        else if (pwd !== null) alert("Невірний пароль!");
+      };
+
+      window.toggleAdminPanel = function() {
+        document.getElementById('adminPanel').classList.toggle('translate-x-full');
+        document.getElementById('adminOverlay').classList.toggle('hidden');
+        if (isAdmin) { renderAdminCategories(); renderAdminSizes(); renderAdminProductList(); updateDocSizeCounter(); window.updateStorageStats(); }
+      };
+
+      window.saveStoreSettings = async function() {
+        const nameInput = document.getElementById('adminStoreNameInput').value.trim();
+        if (nameInput) state.storeName = nameInput;
+        const file = document.getElementById('adminLogoFile').files[0];
+        if (file) {
+          const oldLogo = state.storeLogo;
+          state.storeLogo = await uploadImage(file, 'branding', 300, 0.8);
+          await deleteImageSafe(oldLogo);
+        }
+        await saveState();
+        alert("Налаштування бренду оновлено!");
+      };
+
+      function renderAdminCategories() {
+        const box = document.getElementById('adminCategoryTags');
+        box.innerHTML = state.categories.map((c, i) => `
+          <span class="tag">${c}
+            <button onclick="window.editCategory(${i})" title="Перейменувати">✎</button>
+            <button onclick="window.removeCategory(${i})" title="Видалити">×</button>
+          </span>`).join('');
+      }
+      window.addCategory = async function() {
+        const inp = document.getElementById('newCategoryInput');
+        const val = inp.value.trim();
+        if (!val || state.categories.includes(val)) return;
+        state.categories.push(val);
+        inp.value = '';
+        await saveState();
+        renderAdminCategories();
+      };
+      window.editCategory = async function(idx) {
+        const oldName = state.categories[idx];
+        const newName = prompt("Нова назва розділу:", oldName);
+        if (!newName || !newName.trim() || newName.trim() === oldName) return;
+        const trimmed = newName.trim();
+        state.categories[idx] = trimmed;
+        state.products.forEach(p => { if (p.category === oldName) p.category = trimmed; });
+        await saveState();
+        renderAdminCategories();
+      };
+      window.removeCategory = async function(idx) {
+        state.categories.splice(idx, 1);
+        await saveState();
+        renderAdminCategories();
+      };
+
+      function renderAdminSizes() {
+        const box = document.getElementById('adminSizeTags');
+        box.innerHTML = state.sizes.map((s, i) => `
+          <span class="tag">${s}
+            <button onclick="window.editSize(${i})" title="Перейменувати">✎</button>
+            <button onclick="window.removeSize(${i})" title="Видалити">×</button>
+          </span>`).join('');
+      }
+      window.addSize = async function() {
+        const inp = document.getElementById('newSizeInput');
+        const val = inp.value.trim();
+        if (!val || state.sizes.includes(val)) return;
+        state.sizes.push(val);
+        inp.value = '';
+        await saveState();
+        renderAdminSizes();
+      };
+      window.editSize = async function(idx) {
+        const oldVal = state.sizes[idx];
+        const newVal = prompt("Нова назва розміру:", oldVal);
+        if (!newVal || !newVal.trim() || newVal.trim() === oldVal) return;
+        const trimmed = newVal.trim();
+        state.sizes[idx] = trimmed;
+        state.products.forEach(p => { p.sizes = (p.sizes || []).map(s => s === oldVal ? trimmed : s); });
+        await saveState();
+        renderAdminSizes();
+      };
+      window.removeSize = async function(idx) {
+        state.sizes.splice(idx, 1);
+        await saveState();
+        renderAdminSizes();
+      };
+
+      window.addNewProduct = async function() {
+        state.products.unshift({
+          id: Date.now(), title: "Новий товар", price: 0,
+          category: state.categories[0] || "", sizes: [], color: "", material: "",
+          images: [], desc: ""
+        });
+        await saveState();
+        renderAdminProductList();
+      };
+
+      window.updateProductField = async function(id, field, value) {
+        const p = state.products.find(x => x.id === id);
+        if (!p) return;
+        p[field] = (field === 'price') ? (Number(value) || 0) : value;
+        await saveState();
+      };
+
+      window.toggleProductSize = async function(id, size) {
+        const p = state.products.find(x => x.id === id);
+        if (!p) return;
+        if (!p.sizes) p.sizes = [];
+        p.sizes = p.sizes.includes(size) ? p.sizes.filter(s => s !== size) : [...p.sizes, size];
+        await saveState();
+        renderAdminProductList();
+      };
+
+      window.uploadProductPhoto = async function(event, id, idx) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const p = state.products.find(x => x.id === id);
+        if (!p) return;
+        if (!p.images) p.images = [];
+        const box = event.target.closest('.upload-slot');
+        if (box) box.style.opacity = '0.5';
+        try {
+          const oldImg = p.images[idx];
+          p.images[idx] = await uploadImage(file, 'products');
+          await saveState();
+          renderAdminProductList();
+          window.updateStorageStats();
+          await deleteImageSafe(oldImg);
+        } catch (e) {
+          alert('Не вдалося завантажити фото.');
+        } finally {
+          if (box) box.style.opacity = '1';
+        }
+      };
+
+      window.removeProductPhoto = async function(id, idx) {
+        const p = state.products.find(x => x.id === id);
+        if (!p || !p.images || !p.images[idx]) return;
+        const img = p.images[idx];
+        p.images.splice(idx, 1);
+        await saveState();
+        renderAdminProductList();
+        window.updateStorageStats();
+        await deleteImageSafe(img);
+      };
+
+      window.deleteProduct = async function(id) {
+        if (!confirm('Видалити цей товар назавжди?')) return;
+        const p = state.products.find(x => x.id === id);
+        state.products = state.products.filter(x => x.id !== id);
+        await saveState();
+        renderAdminProductList();
+        if (p) for (const img of (p.images || [])) await deleteImageSafe(img);
+      };
+
+      function renderAdminProductList() {
+        const list = document.getElementById('adminProductList');
+        list.innerHTML = state.products.map(p => {
+          const catOptions = state.categories.map(c => `<option value="${c}" ${c === p.category ? 'selected' : ''}>${c}</option>`).join('');
+          let photoSlots = '';
+          for (let i = 0; i < 6; i++) {
+            const img = (p.images && p.images[i]) ? p.images[i] : null;
+            photoSlots += `<label class="upload-slot">
+              ${img ? `<img src="${img.url}"><span class="remove-x" onclick="event.preventDefault();window.removeProductPhoto(${p.id},${i})">×</span>` : `Фото ${i+1}`}
+              <input type="file" accept="image/*" onchange="window.uploadProductPhoto(event, ${p.id}, ${i})">
+            </label>`;
+          }
+          const sizeChips = state.sizes.map(s => `
+            <button type="button" onclick="window.toggleProductSize(${p.id}, '${s}')" class="size-chip ${((p.sizes||[]).includes(s)) ? 'active' : ''}">${s}</button>
+          `).join('');
+
+          return `
+          <div class="product-admin-card">
+            <div class="grid grid-cols-3 gap-1.5 mb-3">${photoSlots}</div>
+            <div class="space-y-2">
+              <input type="text" value="${(p.title||'').replace(/"/g,'&quot;')}" placeholder="Назва товару"
+                     onchange="window.updateProductField(${p.id}, 'title', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm">
+              <div class="grid grid-cols-2 gap-2">
+                <input type="number" value="${p.price||0}" placeholder="Ціна"
+                       onchange="window.updateProductField(${p.id}, 'price', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm">
+                <select onchange="window.updateProductField(${p.id}, 'category', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm">${catOptions}</select>
+              </div>
+              <div>
+                <label class="block text-[10px] text-neutral-500 mb-1">Розміри:</label>
+                <div class="flex flex-wrap gap-1.5">${sizeChips}</div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <input type="text" value="${(p.color||'').replace(/"/g,'&quot;')}" placeholder="Колір"
+                       onchange="window.updateProductField(${p.id}, 'color', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm">
+                <input type="text" value="${(p.material||'').replace(/"/g,'&quot;')}" placeholder="Матеріал"
+                       onchange="window.updateProductField(${p.id}, 'material', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm">
+              </div>
+              <textarea placeholder="Опис товару" onchange="window.updateProductField(${p.id}, 'desc', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm" rows="2">${p.desc||''}</textarea>
+              <button onclick="window.deleteProduct(${p.id})" class="w-full py-2 border border-rose-300 text-rose-600 rounded-lg text-xs font-medium">Видалити товар</button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      function applyBranding() {
+        document.getElementById('headerStoreName').innerText = state.storeName;
+        document.getElementById('footerStoreName').innerText = state.storeName;
+        document.getElementById('pageTitle').innerText = state.storeName + " — Інтернет-магазин одягу";
+        const logoHtml = state.storeLogo ? `<img src="${state.storeLogo.url}" class="w-full h-full object-cover">` : "F";
+        document.getElementById('headerLogoIcon').innerHTML = logoHtml;
+        document.getElementById('footerLogoIcon').innerHTML = logoHtml;
+      }
+
+      function renderCategoryNav() {
+        const box = document.getElementById('categoryNav');
+        box.innerHTML = `<button onclick="window.filterCategory('all')" class="hover:text-amber-300 font-medium transition px-1 py-1 ${currentCategory==='all'?'text-amber-300':''}">Усі товари</button>` +
+          state.categories.map(c => `<button onclick="window.filterCategory('${c}')" class="hover:text-amber-300 font-medium transition px-1 py-1 ${currentCategory===c?'text-amber-300':''}">${c}</button>`).join('');
+      }
+
+      function renderSizeFilterChips() {
+        const box = document.getElementById('sizeFiltersContainer');
+        box.innerHTML = state.sizes.map(s => `<button onclick="window.toggleSizeFilter('${s}', this)" class="size-btn size-chip ${selectedSizes.includes(s)?'active':''}">${s}</button>`).join('');
+      }
+
+      function renderAll() {
+        applyBranding();
+        renderCategoryNav();
+        renderSizeFilterChips();
+        renderBanners();
+        window.applyFilters();
+        if (isAdmin) { renderAdminCategories(); renderAdminSizes(); renderAdminProductList(); }
+      }
+
+      let banners = [{
+        tag: "Нова колекція 2026", title: "Свіжі тренди моди", desc: "Вишуканий одяг європейської якості.",
+        image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80"
+      }];
+      function renderBanners() {
+        document.getElementById('dynamicBannerContainer').innerHTML = banners.map(b => `
+          <div class="absolute inset-0 bg-cover bg-center flex items-center p-4 text-white" style="background-image: linear-gradient(to right, rgba(0,0,0,0.8), rgba(0,0,0,0.3)), url('${b.image}')">
+            <div class="max-w-xs">
+              <span class="bg-amber-500 text-neutral-900 text-[9px] font-bold px-2 py-0.5 rounded uppercase">${b.tag}</span>
+              <h2 class="text-lg font-extrabold mt-1 leading-snug">${b.title}</h2>
+              <p class="text-neutral-200 mt-1 text-[11px]">${b.desc}</p>
+            </div>
+          </div>`).join('');
+      }
+
+      function renderProducts(items) {
+        const grid = document.getElementById('productGrid');
+        document.getElementById('productCount').innerText = `Знайдено: ${items.length}`;
+        if (!items.length) { grid.innerHTML = `<div class="col-span-full py-8 text-center text-neutral-500 text-xs">Товарів не знайдено</div>`; return; }
+        grid.innerHTML = items.map(p => `
+          <div class="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="relative aspect-square bg-neutral-100 cursor-pointer" onclick="window.openProductModal(${p.id})">
+                ${p.images && p.images[0] ? `<img src="${p.images[0].url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-neutral-300 text-3xl">📦</div>`}
+                <span class="absolute top-1.5 left-1.5 bg-brand-800 text-white text-[9px] px-1.5 py-0.5 rounded">Є в наявності</span>
+                ${p.images && p.images.length > 1 ? `<span class="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-1.5 rounded">📷 ${p.images.length}</span>` : ''}
+              </div>
+              <div class="p-2.5">
+                <span class="text-[9px] text-neutral-500 uppercase">${p.category}</span>
+                <h3 onclick="window.openProductModal(${p.id})" class="font-bold text-xs text-neutral-900 mt-0.5 cursor-pointer line-clamp-1">${p.title}</h3>
+                <div class="flex gap-1 mt-1 flex-wrap">${(p.sizes||[]).map(s => `<span class="text-[8px] bg-neutral-100 px-1 rounded border text-neutral-700">${s}</span>`).join('')}</div>
+              </div>
+            </div>
+            <div class="p-2.5 pt-0 flex items-center justify-between">
+              <span class="text-xs font-extrabold text-neutral-900">${p.price} UAH</span>
+              <button onclick="window.addToCart(${p.id})" class="px-2.5 py-1.5 bg-brand-700 hover:bg-brand-800 text-white text-[10px] font-bold rounded min-h-[32px]">У кошик</button>
+            </div>
+          </div>`).join('');
+      }
+
+      window.filterCategory = function(cat) {
+        currentCategory = cat;
+        document.getElementById('catalogTitle').innerText = cat === 'all' ? 'Каталог товарів' : cat;
+        renderCategoryNav();
+        window.applyFilters();
+      };
+
+      window.toggleSizeFilter = function(size, btn) {
+        selectedSizes = selectedSizes.includes(size) ? selectedSizes.filter(s => s !== size) : [...selectedSizes, size];
+        renderSizeFilterChips();
+        window.applyFilters();
+      };
+
+      window.resetFilters = function() {
+        document.getElementById('minPrice').value = '';
+        document.getElementById('maxPrice').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('sortOrder').value = 'default';
+        selectedSizes = [];
+        renderSizeFilterChips();
+        window.applyFilters();
+      };
+
+      window.applyFilters = function() {
+        let result = [...state.products];
+        const searchVal = document.getElementById('searchInput').value.toLowerCase();
+        const minP = parseFloat(document.getElementById('minPrice').value) || 0;
+        const maxP = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+        const sortVal = document.getElementById('sortOrder').value;
+
+        if (currentCategory !== 'all') result = result.filter(p => p.category === currentCategory);
+        if (searchVal) result = result.filter(p => (p.title||'').toLowerCase().includes(searchVal) || (p.desc||'').toLowerCase().includes(searchVal));
+        result = result.filter(p => p.price >= minP && p.price <= maxP);
+        if (selectedSizes.length) result = result.filter(p => (p.sizes||[]).some(s => selectedSizes.includes(s)));
+        if (sortVal === 'cheap') result.sort((a,b) => a.price - b.price);
+        else if (sortVal === 'expensive') result.sort((a,b) => b.price - a.price);
+
+        renderProducts(result);
+      };
+      document.getElementById('searchInput').addEventListener('input', window.applyFilters);
+
+      window.toggleMobileFilters = function() {
+        const content = document.getElementById('filterContent');
+        const icon = document.getElementById('filterToggleIcon');
+        content.classList.toggle('hidden');
+        icon.innerText = content.classList.contains('hidden') ? '▼' : '▲';
+      };
+
+      window.openProductModal = function(id) {
+        const p = state.products.find(x => x.id === id);
+        if (!p) return;
+        const content = document.getElementById('modalContent');
+        const images = p.images && p.images.length ? p.images : [{url:'',path:null}];
+        content.innerHTML = `
+          <div class="space-y-2">
+            <div class="aspect-square bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center">
+              ${images[0].url ? `<img id="mainModalImg" src="${images[0].url}" class="w-full h-full object-cover">` : `<span class="text-4xl text-neutral-300">📦</span>`}
+            </div>
+            ${images.length > 1 ? `<div class="flex gap-1.5 overflow-x-auto pb-1">
+              ${images.map(img => `<img src="${img.url}" onclick="document.getElementById('mainModalImg').src='${img.url}'" class="w-12 h-12 object-cover rounded cursor-pointer border hover:border-brand-700">`).join('')}
+            </div>` : ''}
+          </div>
+          <div>
+            <span class="text-[10px] text-neutral-500 uppercase">${p.category}</span>
+            <h2 class="text-base font-bold text-neutral-900 mt-0.5">${p.title}</h2>
+            <p class="text-sm font-extrabold text-brand-800 mt-1">${p.price} UAH</p>
+            <p class="text-xs text-neutral-600 mt-2">${p.desc||''}</p>
+            <div class="mt-3 space-y-1 text-xs text-neutral-700">
+              <div><strong>Колір:</strong> ${p.color||'—'}</div>
+              <div><strong>Матеріал:</strong> ${p.material||'—'}</div>
+              <div><strong>Розміри:</strong> ${(p.sizes||[]).join(', ')||'—'}</div>
+            </div>
+          </div>
+          <button onclick="window.addToCart(${p.id}); window.closeProductModal();" class="w-full py-3 bg-brand-700 text-white rounded-xl font-bold text-xs min-h-[44px]">Додати в кошик</button>
+        `;
+        document.getElementById('productModal').classList.remove('hidden');
+      };
+      window.closeProductModal = function() { document.getElementById('productModal').classList.add('hidden'); };
+
+      window.toggleCartDrawer = function() {
+        document.getElementById('cartDrawer').classList.toggle('translate-x-full');
+        document.getElementById('cartOverlay').classList.toggle('hidden');
+        renderCart();
+      };
+
+      window.addToCart = function(id) {
+        const p = state.products.find(x => x.id === id);
+        const existing = cart.find(x => x.id === id);
+        if (existing) existing.qty += 1; else cart.push({ ...p, qty: 1 });
+        updateCartBadge();
+        window.toggleCartDrawer();
+      };
+
+      window.updateCartQty = function(id, delta) {
+        const item = cart.find(i => i.id === id);
+        if (item) { item.qty += delta; if (item.qty <= 0) cart = cart.filter(i => i.id !== id); }
+        updateCartBadge();
+        renderCart();
+      };
+
+      function updateCartBadge() { document.getElementById('cartBadge').innerText = cart.reduce((s,i) => s + i.qty, 0); }
+
+      function renderCart() {
+        const container = document.getElementById('cartItemsContainer');
+        if (!cart.length) {
+          container.innerHTML = `<p class="text-neutral-500 text-center py-8 text-xs">Кошик порожній</p>`;
+          document.getElementById('cartTotalPrice').innerText = `0 UAH`;
+          return;
+        }
+        let total = 0;
+        container.innerHTML = cart.map(item => {
+          total += item.price * item.qty;
+          const thumb = item.images && item.images[0] ? item.images[0].url : '';
+          return `<div class="flex items-center gap-2.5 bg-neutral-50 p-2 rounded-xl border text-xs">
+            ${thumb ? `<img src="${thumb}" class="w-12 h-12 object-cover rounded-lg">` : `<div class="w-12 h-12 flex items-center justify-center bg-neutral-100 rounded-lg text-neutral-300">📦</div>`}
+            <div class="flex-1"><h4 class="font-bold text-neutral-900">${item.title}</h4><p class="text-neutral-600">${item.price} UAH</p></div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="window.updateCartQty(${item.id}, -1)" class="w-7 h-7 border rounded bg-white font-bold">-</button>
+              <span>${item.qty}</span>
+              <button onclick="window.updateCartQty(${item.id}, 1)" class="w-7 h-7 border rounded bg-white font-bold">+</button>
+            </div>
+          </div>`;
+        }).join('');
+        document.getElementById('cartTotalPrice').innerText = `${total} UAH`;
+      }
+
+      window.checkoutTelegram = function() {
+        if (!cart.length) return alert('Кошик порожній');
+        let message = `🛍 Замовлення у магазині "${state.storeName}":\n\n`;
+        let total = 0;
+        cart.forEach(item => { message += `- ${item.title} (${item.qty} шт.) — ${item.price * item.qty} UAH\n`; total += item.price * item.qty; });
+        message += `\nЗагальна сума: ${total} UAH`;
+        window.open(`https://t.me/${TELEGRAM_USERNAME}?text=${encodeURIComponent(message)}`, '_blank');
+        cart = [];
+        updateCartBadge();
+        renderCart();
+        window.toggleCartDrawer();
+      };
+    </script>
 </body>
 </html>
