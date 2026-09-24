@@ -266,14 +266,14 @@
         storeName: "Fashion Стиль",
         storeLogo: null,
         categories: ["Жіночий одяг", "Чоловічий одяг", "Верхній одяг", "Взуття", "Аксесуари"],
-        filterGroups: [ { name: "Розмір", values: ["XS", "S", "M", "L", "XL"] } ],
+        filterGroups: [],
         products: [
           {
             id: 1,
             title: "Куртка жіноча",
             price: 500,
             category: "Верхній одяг",
-            filters: { "Розмір": ["M"] },
+            filters: {},
             color: "чорний",
             material: "Текстиль",
             images: [{ url: "https://images.unsplash.com/photo-1543076447-215ad9ba6923?auto=format&fit=crop&w=600&q=80", path: null }],
@@ -294,24 +294,26 @@
       const connStatusEl = document.getElementById('connStatus');
 
       /* Переносить старі поля (sizes на верхньому рівні, sizes у товарі) у нову
-         структуру filterGroups/filters, нічого не видаляючи з реальних даних. */
+         структуру filterGroups/filters, нічого не видаляючи з реальних даних.
+         Також прибирає групу "Розмір" з фільтрів, якщо вона там залишилась
+         від попередньої версії сайту — на прохання прибрати це слово. */
       function migrateLegacyFilters(s) {
         let changed = false;
         if (!s.filterGroups) {
-          const legacySizes = (s.sizes && s.sizes.length) ? s.sizes.slice() : ["XS","S","M","L","XL"];
-          s.filterGroups = [{ name: "Розмір", values: legacySizes }];
+          s.filterGroups = [];
           changed = true;
         }
         delete s.sizes;
         (s.products || []).forEach(p => {
-          if (!p.filters) {
-            p.filters = {};
-            if (p.sizes && p.sizes.length) p.filters["Розмір"] = p.sizes.slice();
-            changed = true;
-          }
+          if (!p.filters) { p.filters = {}; changed = true; }
           delete p.sizes;
           delete p.availability;
         });
+
+        const beforeCount = s.filterGroups.length;
+        s.filterGroups = s.filterGroups.filter(g => g.name !== "Розмір");
+        if (s.filterGroups.length !== beforeCount) changed = true;
+
         return changed;
       }
 
