@@ -42,7 +42,9 @@
         .tag button { background:none; border:none; color:#737373; cursor:pointer; padding:2px 4px; font-size:13px; }
         .size-chip { border:1px solid #d4d4d4; border-radius:16px; padding:5px 12px; font-size:11px; cursor:pointer; background:#fff; }
         .size-chip.active { background:#73574d; color:#fff; border-color:#73574d; }
-        .product-admin-card { border:1px solid #e5e5e5; border-radius:12px; padding:14px; margin-bottom:14px; background:#fafafa; }
+        .product-admin-card { border:1px solid #e5e5e5; border-radius:12px; padding:12px; margin-bottom:12px; background:#fafafa; }
+        .filter-group-card { border:1px solid #e5e5e5; border-radius:10px; padding:12px; margin-bottom:10px; background:#fff; }
+        .mini-icon-btn { background:none; border:none; color:#737373; cursor:pointer; padding:4px 6px; font-size:13px; }
     </style>
 </head>
 <body class="bg-brand-50 text-neutral-800 font-sans antialiased min-h-screen flex flex-col">
@@ -74,7 +76,6 @@
             </div>
         </div>
 
-        <!-- CATEGORIES SCROLL (динамічний, з state.categories) -->
         <nav class="bg-brand-800 text-white px-2">
             <div id="categoryNav" class="max-w-7xl mx-auto flex items-center gap-4 overflow-x-auto py-2.5 text-xs whitespace-nowrap"></div>
         </nav>
@@ -102,10 +103,8 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-[11px] font-medium text-neutral-700 mb-1">Розмір:</label>
-                    <div class="flex flex-wrap gap-1.5" id="sizeFiltersContainer"></div>
-                </div>
+                <!-- Довільні групи фільтрів (розмір, колір, тканина тощо) — керуються з адмінки -->
+                <div id="dynamicFilterGroups" class="space-y-3"></div>
 
                 <div>
                     <label class="block text-[11px] font-medium text-neutral-700 mb-1">Сортування:</label>
@@ -144,7 +143,6 @@
         </div>
         <div class="p-6 flex-1 overflow-y-auto space-y-6">
 
-            <!-- ПАМ'ЯТЬ ТА ЛІМІТИ -->
             <div class="bg-neutral-50 p-4 rounded-xl border">
                 <h3 class="font-bold text-sm text-neutral-900 mb-3">Пам'ять та ліміти</h3>
                 <div class="text-xs mb-2">
@@ -158,7 +156,6 @@
                 <button onclick="window.updateStorageStats()" class="w-full mt-2 py-2 bg-white border border-neutral-300 text-neutral-600 rounded-lg text-xs">Оновити лічильник</button>
             </div>
 
-            <!-- НАЛАШТУВАННЯ МАГАЗИНУ -->
             <div class="bg-neutral-50 p-4 rounded-xl border space-y-3">
                 <h3 class="font-bold text-sm text-neutral-900">Налаштування магазину</h3>
                 <div>
@@ -172,7 +169,6 @@
                 <button onclick="window.saveStoreSettings()" class="w-full py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-medium">Зберегти налаштування бренду</button>
             </div>
 
-            <!-- РОЗДІЛИ САЙТУ (категорії) -->
             <div class="bg-neutral-50 p-4 rounded-xl border">
                 <h3 class="font-bold text-sm text-neutral-900 mb-3">Розділи сайту (категорії)</h3>
                 <div id="adminCategoryTags" class="mb-2"></div>
@@ -182,17 +178,17 @@
                 </div>
             </div>
 
-            <!-- РОЗМІРИ (фільтри) -->
+            <!-- ПАРАМЕТРИ ФІЛЬТРІВ: довільні групи (розмір, колір, тканина тощо) -->
             <div class="bg-neutral-50 p-4 rounded-xl border">
-                <h3 class="font-bold text-sm text-neutral-900 mb-3">Розміри (для фільтра і карток товарів)</h3>
-                <div id="adminSizeTags" class="mb-2"></div>
-                <div class="flex gap-2">
-                    <input type="text" id="newSizeInput" placeholder="Новий розмір" class="w-full px-3 py-2 border rounded-lg">
-                    <button onclick="window.addSize()" class="px-4 bg-brand-700 text-white rounded-lg font-bold">+</button>
+                <h3 class="font-bold text-sm text-neutral-900 mb-1">Параметри фільтрів</h3>
+                <p class="text-[11px] text-neutral-500 mb-3">Створюйте будь-які групи (наприклад «Розмір», «Колір», «Тканина») зі своїми значеннями — вони одразу з'являться і у фільтрі, і в картці товару.</p>
+                <div id="adminFilterGroups"></div>
+                <div class="flex gap-2 mt-2">
+                    <input type="text" id="newFilterGroupInput" placeholder="Назва нової групи (напр. Колір)" class="w-full px-3 py-2 border rounded-lg">
+                    <button onclick="window.addFilterGroup()" class="px-4 bg-brand-700 text-white rounded-lg font-bold">+</button>
                 </div>
             </div>
 
-            <!-- ТОВАРИ -->
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="font-bold text-sm text-neutral-900">Товари</h3>
@@ -270,14 +266,14 @@
         storeName: "Fashion Стиль",
         storeLogo: null,
         categories: ["Жіночий одяг", "Чоловічий одяг", "Верхній одяг", "Взуття", "Аксесуари"],
-        sizes: ["XS", "S", "M", "L", "XL"],
+        filterGroups: [ { name: "Розмір", values: ["XS", "S", "M", "L", "XL"] } ],
         products: [
           {
             id: 1,
             title: "Куртка жіноча",
             price: 500,
             category: "Верхній одяг",
-            sizes: ["M"],
+            filters: { "Розмір": ["M"] },
             color: "чорний",
             material: "Текстиль",
             images: [{ url: "https://images.unsplash.com/photo-1543076447-215ad9ba6923?auto=format&fit=crop&w=600&q=80", path: null }],
@@ -290,24 +286,59 @@
       let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
       let isAdmin = false;
       let currentCategory = 'all';
-      let selectedSizes = [];
+      let selectedFilters = {}; // { groupName: [values] }
       let cart = [];
+      let dataLoaded = false;
+      let expandedProductIds = new Set();
 
       const connStatusEl = document.getElementById('connStatus');
 
+      /* Переносить старі поля (sizes на верхньому рівні, sizes у товарі) у нову
+         структуру filterGroups/filters, нічого не видаляючи з реальних даних. */
+      function migrateLegacyFilters(s) {
+        let changed = false;
+        if (!s.filterGroups) {
+          const legacySizes = (s.sizes && s.sizes.length) ? s.sizes.slice() : ["XS","S","M","L","XL"];
+          s.filterGroups = [{ name: "Розмір", values: legacySizes }];
+          changed = true;
+        }
+        delete s.sizes;
+        (s.products || []).forEach(p => {
+          if (!p.filters) {
+            p.filters = {};
+            if (p.sizes && p.sizes.length) p.filters["Розмір"] = p.sizes.slice();
+            changed = true;
+          }
+          delete p.sizes;
+          delete p.availability;
+        });
+        return changed;
+      }
+
       onSnapshot(catalogRef, async (snap) => {
-        if (!snap.exists()) { await setDoc(catalogRef, DEFAULT_STATE); return; }
+        if (!snap.exists()) {
+          await setDoc(catalogRef, DEFAULT_STATE);
+          dataLoaded = true;
+          return;
+        }
         state = snap.data();
         if (!state.categories) state.categories = DEFAULT_STATE.categories.slice();
-        if (!state.sizes) state.sizes = DEFAULT_STATE.sizes.slice();
+        dataLoaded = true;
+        const needsMigration = migrateLegacyFilters(state);
         connStatusEl.innerHTML = '<span class="conn-dot" style="background:#22c55e;"></span>Онлайн';
         renderAll();
+        if (needsMigration) await saveState();
       }, (err) => {
         console.error(err);
         connStatusEl.innerHTML = '<span class="conn-dot" style="background:#ef4444;"></span>Немає з’єднання';
       });
 
       async function saveState() {
+        if (!dataLoaded) {
+          console.warn('Спроба зберегти дані до завершення першого завантаження — запис заблоковано.');
+          alert('Зачекайте секунду — дані ще завантажуються з бази. Спробуйте ще раз.');
+          return;
+        }
         await setDoc(catalogRef, state);
         updateDocSizeCounter();
       }
@@ -379,7 +410,6 @@
         if (imgObj && imgObj.path) { try { await deleteObject(storageRef(storage, imgObj.path)); } catch (e) {} }
       }
 
-      /* ---------- Адмін-доступ ---------- */
       window.requestAdminAccess = function() {
         const pwd = prompt("Введіть пароль адміністратора:");
         if (pwd === ADMIN_PASSWORD) { isAdmin = true; window.toggleAdminPanel(); }
@@ -389,7 +419,7 @@
       window.toggleAdminPanel = function() {
         document.getElementById('adminPanel').classList.toggle('translate-x-full');
         document.getElementById('adminOverlay').classList.toggle('hidden');
-        if (isAdmin) { renderAdminCategories(); renderAdminSizes(); renderAdminProductList(); updateDocSizeCounter(); window.updateStorageStats(); }
+        if (isAdmin) { renderAdminCategories(); renderAdminFilterGroups(); renderAdminProductList(); updateDocSizeCounter(); window.updateStorageStats(); }
       };
 
       window.saveStoreSettings = async function() {
@@ -439,48 +469,120 @@
         renderAdminCategories();
       };
 
-      /* ---------- Розміри (фільтри) ---------- */
-      function renderAdminSizes() {
-        const box = document.getElementById('adminSizeTags');
-        box.innerHTML = state.sizes.map((s, i) => `
-          <span class="tag">${s}
-            <button onclick="window.editSize(${i})" title="Перейменувати">✎</button>
-            <button onclick="window.removeSize(${i})" title="Видалити">×</button>
-          </span>`).join('');
+      /* ---------- Параметри фільтрів: довільні групи значень ---------- */
+      function renderAdminFilterGroups() {
+        const box = document.getElementById('adminFilterGroups');
+        box.innerHTML = state.filterGroups.map((g, gi) => `
+          <div class="filter-group-card">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-bold text-xs text-neutral-800">${g.name}</span>
+              <div>
+                <button class="mini-icon-btn" onclick="window.renameFilterGroup(${gi})" title="Перейменувати групу">✎</button>
+                <button class="mini-icon-btn" onclick="window.removeFilterGroup(${gi})" title="Видалити групу">🗑</button>
+              </div>
+            </div>
+            <div class="mb-2">
+              ${g.values.map((v, vi) => `
+                <span class="tag">${v}
+                  <button onclick="window.renameFilterValue(${gi},${vi})" title="Перейменувати">✎</button>
+                  <button onclick="window.removeFilterValue(${gi},${vi})" title="Видалити">×</button>
+                </span>`).join('')}
+            </div>
+            <div class="flex gap-2">
+              <input type="text" id="newFilterValueInput_${gi}" placeholder="Нове значення" class="w-full px-2 py-1.5 border rounded-lg text-xs">
+              <button onclick="window.addFilterValue(${gi})" class="px-3 bg-brand-700 text-white rounded-lg text-xs font-bold">+</button>
+            </div>
+          </div>
+        `).join('');
       }
-      window.addSize = async function() {
-        const inp = document.getElementById('newSizeInput');
+
+      window.addFilterGroup = async function() {
+        const inp = document.getElementById('newFilterGroupInput');
         const val = inp.value.trim();
-        if (!val || state.sizes.includes(val)) return;
-        state.sizes.push(val);
+        if (!val || state.filterGroups.some(g => g.name === val)) return;
+        state.filterGroups.push({ name: val, values: [] });
         inp.value = '';
         await saveState();
-        renderAdminSizes();
-      };
-      window.editSize = async function(idx) {
-        const oldVal = state.sizes[idx];
-        const newVal = prompt("Нова назва розміру:", oldVal);
-        if (!newVal || !newVal.trim() || newVal.trim() === oldVal) return;
-        const trimmed = newVal.trim();
-        state.sizes[idx] = trimmed;
-        state.products.forEach(p => { p.sizes = (p.sizes || []).map(s => s === oldVal ? trimmed : s); });
-        await saveState();
-        renderAdminSizes();
-      };
-      window.removeSize = async function(idx) {
-        state.sizes.splice(idx, 1);
-        await saveState();
-        renderAdminSizes();
+        renderAdminFilterGroups();
       };
 
-      /* ---------- Товари: редагування прямо в картці ---------- */
-      window.addNewProduct = async function() {
-        state.products.unshift({
-          id: Date.now(), title: "Новий товар", price: 0,
-          category: state.categories[0] || "", sizes: [], color: "", material: "",
-          images: [], video: null, desc: ""
+      window.renameFilterGroup = async function(gi) {
+        const g = state.filterGroups[gi];
+        const newName = prompt("Нова назва групи:", g.name);
+        if (!newName || !newName.trim() || newName.trim() === g.name) return;
+        const trimmed = newName.trim();
+        const oldName = g.name;
+        g.name = trimmed;
+        state.products.forEach(p => {
+          if (p.filters && Object.prototype.hasOwnProperty.call(p.filters, oldName)) {
+            p.filters[trimmed] = p.filters[oldName];
+            delete p.filters[oldName];
+          }
         });
         await saveState();
+        renderAdminFilterGroups();
+        renderAdminProductList();
+      };
+
+      window.removeFilterGroup = async function(gi) {
+        if (!confirm('Видалити цю групу фільтра повністю?')) return;
+        const g = state.filterGroups[gi];
+        state.filterGroups.splice(gi, 1);
+        state.products.forEach(p => { if (p.filters) delete p.filters[g.name]; });
+        await saveState();
+        renderAdminFilterGroups();
+        renderAdminProductList();
+      };
+
+      window.addFilterValue = async function(gi) {
+        const inp = document.getElementById('newFilterValueInput_' + gi);
+        const val = inp.value.trim();
+        const g = state.filterGroups[gi];
+        if (!val || g.values.includes(val)) return;
+        g.values.push(val);
+        inp.value = '';
+        await saveState();
+        renderAdminFilterGroups();
+      };
+
+      window.renameFilterValue = async function(gi, vi) {
+        const g = state.filterGroups[gi];
+        const oldVal = g.values[vi];
+        const newVal = prompt("Нова назва значення:", oldVal);
+        if (!newVal || !newVal.trim() || newVal.trim() === oldVal) return;
+        const trimmed = newVal.trim();
+        g.values[vi] = trimmed;
+        state.products.forEach(p => {
+          if (p.filters && p.filters[g.name]) {
+            p.filters[g.name] = p.filters[g.name].map(v => v === oldVal ? trimmed : v);
+          }
+        });
+        await saveState();
+        renderAdminFilterGroups();
+        renderAdminProductList();
+      };
+
+      window.removeFilterValue = async function(gi, vi) {
+        state.filterGroups[gi].values.splice(vi, 1);
+        await saveState();
+        renderAdminFilterGroups();
+      };
+
+      /* ---------- Товари: згорнута картка + форма редагування ---------- */
+      window.addNewProduct = async function() {
+        const id = Date.now();
+        state.products.unshift({
+          id, title: "Новий товар", price: 0,
+          category: state.categories[0] || "", filters: {}, color: "", material: "",
+          images: [], video: null, desc: ""
+        });
+        expandedProductIds.add(id);
+        await saveState();
+        renderAdminProductList();
+      };
+
+      window.toggleEditProduct = function(id) {
+        if (expandedProductIds.has(id)) expandedProductIds.delete(id); else expandedProductIds.add(id);
         renderAdminProductList();
       };
 
@@ -491,11 +593,14 @@
         await saveState();
       };
 
-      window.toggleProductSize = async function(id, size) {
+      window.toggleProductFilterValue = async function(id, groupName, value) {
         const p = state.products.find(x => x.id === id);
         if (!p) return;
-        if (!p.sizes) p.sizes = [];
-        p.sizes = p.sizes.includes(size) ? p.sizes.filter(s => s !== size) : [...p.sizes, size];
+        if (!p.filters) p.filters = {};
+        if (!p.filters[groupName]) p.filters[groupName] = [];
+        p.filters[groupName] = p.filters[groupName].includes(value)
+          ? p.filters[groupName].filter(v => v !== value)
+          : [...p.filters[groupName], value];
         await saveState();
         renderAdminProductList();
       };
@@ -565,7 +670,7 @@
         }
 
         if (file.size > 50 * 1024 * 1024) {
-          alert('Відео важить більше 50 МБ — завантаження та відкриття сайту можуть бути повільними. Бажано взяти файл менше.');
+          alert('Відео важить більше 50 МБ — завантаження та відкриття сайту можуть бути повільними.');
         }
 
         if (box) box.style.opacity = '0.5';
@@ -604,14 +709,36 @@
         if (!confirm('Видалити цей товар назавжди?')) return;
         const p = state.products.find(x => x.id === id);
         state.products = state.products.filter(x => x.id !== id);
+        expandedProductIds.delete(id);
         await saveState();
         renderAdminProductList();
         if (p) for (const img of (p.images || [])) await deleteImageSafe(img);
+        if (p && p.video) await deleteImageSafe(p.video);
       };
 
       function renderAdminProductList() {
         const list = document.getElementById('adminProductList');
         list.innerHTML = state.products.map(p => {
+          const isExpanded = expandedProductIds.has(p.id);
+          const thumb = (p.images && p.images[0]) ? `<img src="${p.images[0].url}" class="w-12 h-12 object-cover rounded-lg">` : `<div class="w-12 h-12 flex items-center justify-center bg-neutral-200 rounded-lg text-neutral-400">📦</div>`;
+
+          if (!isExpanded) {
+            return `
+            <div class="product-admin-card flex items-center justify-between">
+              <div class="flex items-center gap-3 min-w-0">
+                ${thumb}
+                <div class="min-w-0">
+                  <div class="font-bold text-xs truncate">${p.title || 'Без назви'}</div>
+                  <div class="text-neutral-500 text-[11px]">${p.price||0} UAH · ${p.category||'—'}</div>
+                </div>
+              </div>
+              <div class="flex gap-1 shrink-0">
+                <button onclick="window.toggleEditProduct(${p.id})" class="px-2.5 py-2 bg-white border border-neutral-300 rounded-lg text-xs">✎ Редагувати</button>
+                <button onclick="window.deleteProduct(${p.id})" class="px-2.5 py-2 border border-rose-300 text-rose-600 rounded-lg text-xs">🗑</button>
+              </div>
+            </div>`;
+          }
+
           const catOptions = state.categories.map(c => `<option value="${c}" ${c === p.category ? 'selected' : ''}>${c}</option>`).join('');
           let photoSlots = '';
           for (let i = 0; i < 6; i++) {
@@ -621,16 +748,28 @@
               <input type="file" accept="image/*" onchange="window.uploadProductPhoto(event, ${p.id}, ${i})">
             </label>`;
           }
-          const sizeChips = state.sizes.map(s => `
-            <button type="button" onclick="window.toggleProductSize(${p.id}, '${s}')" class="size-chip ${((p.sizes||[]).includes(s)) ? 'active' : ''}">${s}</button>
-          `).join('');
 
           const videoSlotInner = p.video
             ? `<video src="${p.video.url}" muted></video><span class="remove-x" onclick="event.preventDefault();window.removeProductVideo(${p.id})">×</span>`
             : `Відео (до 2 хв)`;
 
+          const filterGroupsHtml = state.filterGroups.map(g => {
+            const activeValues = (p.filters && p.filters[g.name]) ? p.filters[g.name] : [];
+            const chips = g.values.map(v => `
+              <button type="button" onclick="window.toggleProductFilterValue(${p.id}, '${g.name}', '${v}')" class="size-chip ${activeValues.includes(v) ? 'active' : ''}">${v}</button>
+            `).join('');
+            return `<div class="mb-2">
+              <label class="block text-[10px] text-neutral-500 mb-1">${g.name}:</label>
+              <div class="flex flex-wrap gap-1.5">${chips || '<span class="text-[10px] text-neutral-400">Немає значень — додайте їх у розділі «Параметри фільтрів»</span>'}</div>
+            </div>`;
+          }).join('');
+
           return `
           <div class="product-admin-card">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-xs font-bold text-neutral-500">Редагування товару</span>
+              <button onclick="window.toggleEditProduct(${p.id})" class="text-xs px-2.5 py-1.5 bg-white border border-neutral-300 rounded-lg">✓ Готово</button>
+            </div>
             <div class="grid grid-cols-3 gap-1.5 mb-2">${photoSlots}</div>
             <label class="upload-slot video-slot mb-3" style="display:flex;">
               ${videoSlotInner}
@@ -644,10 +783,7 @@
                        onchange="window.updateProductField(${p.id}, 'price', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm">
                 <select onchange="window.updateProductField(${p.id}, 'category', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm">${catOptions}</select>
               </div>
-              <div>
-                <label class="block text-[10px] text-neutral-500 mb-1">Розміри:</label>
-                <div class="flex flex-wrap gap-1.5">${sizeChips}</div>
-              </div>
+              ${filterGroupsHtml}
               <div class="grid grid-cols-2 gap-2">
                 <input type="text" value="${(p.color||'').replace(/"/g,'&quot;')}" placeholder="Колір"
                        onchange="window.updateProductField(${p.id}, 'color', this.value)" class="w-full px-3 py-2 border rounded-lg text-sm">
@@ -677,18 +813,25 @@
           state.categories.map(c => `<button onclick="window.filterCategory('${c}')" class="hover:text-amber-300 font-medium transition px-1 py-1 ${currentCategory===c?'text-amber-300':''}">${c}</button>`).join('');
       }
 
-      function renderSizeFilterChips() {
-        const box = document.getElementById('sizeFiltersContainer');
-        box.innerHTML = state.sizes.map(s => `<button onclick="window.toggleSizeFilter('${s}', this)" class="size-btn size-chip ${selectedSizes.includes(s)?'active':''}">${s}</button>`).join('');
+      function renderDynamicFilterGroups() {
+        const box = document.getElementById('dynamicFilterGroups');
+        box.innerHTML = state.filterGroups.filter(g => g.values.length).map(g => `
+          <div>
+            <label class="block text-[11px] font-medium text-neutral-700 mb-1">${g.name}:</label>
+            <div class="flex flex-wrap gap-1.5">
+              ${g.values.map(v => `<button onclick="window.toggleFilterValue('${g.name}', '${v}')" class="size-chip ${(selectedFilters[g.name]||[]).includes(v) ? 'active' : ''}">${v}</button>`).join('')}
+            </div>
+          </div>
+        `).join('');
       }
 
       function renderAll() {
         applyBranding();
         renderCategoryNav();
-        renderSizeFilterChips();
+        renderDynamicFilterGroups();
         renderBanners();
         window.applyFilters();
-        if (isAdmin) { renderAdminCategories(); renderAdminSizes(); renderAdminProductList(); }
+        if (isAdmin) { renderAdminCategories(); renderAdminFilterGroups(); renderAdminProductList(); }
       }
 
       let banners = [{
@@ -706,6 +849,11 @@
           </div>`).join('');
       }
 
+      function allFilterValuesFor(p) {
+        if (!p.filters) return [];
+        return Object.values(p.filters).flat();
+      }
+
       function renderProducts(items) {
         const grid = document.getElementById('productGrid');
         document.getElementById('productCount').innerText = `Знайдено: ${items.length}`;
@@ -715,14 +863,13 @@
             <div>
               <div class="relative aspect-square bg-neutral-100 cursor-pointer" onclick="window.openProductModal(${p.id})">
                 ${p.images && p.images[0] ? `<img src="${p.images[0].url}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-neutral-300 text-3xl">📦</div>`}
-                <span class="absolute top-1.5 left-1.5 bg-brand-800 text-white text-[9px] px-1.5 py-0.5 rounded">Є в наявності</span>
                 ${p.images && p.images.length > 1 ? `<span class="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-1.5 rounded">📷 ${p.images.length}</span>` : ''}
                 ${p.video ? `<span class="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[9px] px-1.5 rounded">🎥</span>` : ''}
               </div>
               <div class="p-2.5">
                 <span class="text-[9px] text-neutral-500 uppercase">${p.category}</span>
                 <h3 onclick="window.openProductModal(${p.id})" class="font-bold text-xs text-neutral-900 mt-0.5 cursor-pointer line-clamp-1">${p.title}</h3>
-                <div class="flex gap-1 mt-1 flex-wrap">${(p.sizes||[]).map(s => `<span class="text-[8px] bg-neutral-100 px-1 rounded border text-neutral-700">${s}</span>`).join('')}</div>
+                <div class="flex gap-1 mt-1 flex-wrap">${allFilterValuesFor(p).map(v => `<span class="text-[8px] bg-neutral-100 px-1 rounded border text-neutral-700">${v}</span>`).join('')}</div>
               </div>
             </div>
             <div class="p-2.5 pt-0 flex items-center justify-between">
@@ -739,9 +886,13 @@
         window.applyFilters();
       };
 
-      window.toggleSizeFilter = function(size, btn) {
-        selectedSizes = selectedSizes.includes(size) ? selectedSizes.filter(s => s !== size) : [...selectedSizes, size];
-        renderSizeFilterChips();
+      window.toggleFilterValue = function(groupName, value) {
+        if (!selectedFilters[groupName]) selectedFilters[groupName] = [];
+        selectedFilters[groupName] = selectedFilters[groupName].includes(value)
+          ? selectedFilters[groupName].filter(v => v !== value)
+          : [...selectedFilters[groupName], value];
+        if (!selectedFilters[groupName].length) delete selectedFilters[groupName];
+        renderDynamicFilterGroups();
         window.applyFilters();
       };
 
@@ -750,8 +901,8 @@
         document.getElementById('maxPrice').value = '';
         document.getElementById('searchInput').value = '';
         document.getElementById('sortOrder').value = 'default';
-        selectedSizes = [];
-        renderSizeFilterChips();
+        selectedFilters = {};
+        renderDynamicFilterGroups();
         window.applyFilters();
       };
 
@@ -765,7 +916,13 @@
         if (currentCategory !== 'all') result = result.filter(p => p.category === currentCategory);
         if (searchVal) result = result.filter(p => (p.title||'').toLowerCase().includes(searchVal) || (p.desc||'').toLowerCase().includes(searchVal));
         result = result.filter(p => p.price >= minP && p.price <= maxP);
-        if (selectedSizes.length) result = result.filter(p => (p.sizes||[]).some(s => selectedSizes.includes(s)));
+
+        Object.keys(selectedFilters).forEach(groupName => {
+          const wanted = selectedFilters[groupName];
+          if (!wanted.length) return;
+          result = result.filter(p => p.filters && p.filters[groupName] && p.filters[groupName].some(v => wanted.includes(v)));
+        });
+
         if (sortVal === 'cheap') result.sort((a,b) => a.price - b.price);
         else if (sortVal === 'expensive') result.sort((a,b) => b.price - a.price);
 
@@ -791,6 +948,9 @@
         if (!media.length) media.push({ type: 'none', url: '' });
 
         const first = media[0];
+        const filterRows = Object.entries(p.filters || {}).filter(([,v]) => v && v.length)
+          .map(([k,v]) => `<div><strong>${k}:</strong> ${v.join(', ')}</div>`).join('');
+
         content.innerHTML = `
           <div class="space-y-2">
             <div id="mainModalMedia" class="aspect-square bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center">
@@ -815,7 +975,7 @@
             <div class="mt-3 space-y-1 text-xs text-neutral-700">
               <div><strong>Колір:</strong> ${p.color||'—'}</div>
               <div><strong>Матеріал:</strong> ${p.material||'—'}</div>
-              <div><strong>Розміри:</strong> ${(p.sizes||[]).join(', ')||'—'}</div>
+              ${filterRows}
             </div>
           </div>
           <button onclick="window.addToCart(${p.id}); window.closeProductModal();" class="w-full py-3 bg-brand-700 text-white rounded-xl font-bold text-xs min-h-[44px]">Додати в кошик</button>
@@ -832,6 +992,7 @@
           ? `<video src="${m.url}" controls playsinline autoplay class="w-full h-full object-contain bg-black"></video>`
           : `<img src="${m.url}" class="w-full h-full object-cover">`;
       };
+
       window.closeProductModal = function() {
         document.getElementById('productModal').classList.add('hidden');
         document.querySelectorAll('#modalContent video').forEach(v => v.pause());
