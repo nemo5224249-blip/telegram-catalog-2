@@ -570,16 +570,12 @@
             
             let imagesHtml = '';
             if (p.images && p.images.length > 0) {
-                imagesHtml = p.images.filter(img => img && img.trim() !== '').map(img => 
-                    `<img src="${img}" class="w-full h-72 sm:h-96 object-cover rounded-xl bg-neutral-100 shadow-sm border border-neutral-100">`
-                ).join('');
-            } 
-            if (!imagesHtml) {
+                imagesHtml = p.images.map(img => `<img src="${img}" class="w-full h-72 sm:h-96 object-cover rounded-xl bg-neutral-100 shadow-sm">`).join('');
+            } else {
                 imagesHtml = `<img src="https://placehold.co/400x400/f0f0f0/333?text=Vogue" class="w-full h-72 sm:h-96 object-cover rounded-xl bg-neutral-100 shadow-sm">`;
             }
 
-            let videoHtml = p.video && p.video.trim() !== '' ? 
-                `<div class="space-y-1"><span class="text-xs font-bold text-neutral-700 block">Відеоогляд товару:</span><video src="${p.video}" controls class="w-full h-72 sm:h-96 object-cover rounded-xl bg-black shadow-sm"></video></div>` : '';
+            let videoHtml = p.video ? `<video src="${p.video}" controls class="w-full h-72 sm:h-96 object-cover rounded-xl bg-black shadow-sm"></video>` : '';
 
             let specsList = '';
             if (p.specs) {
@@ -588,11 +584,7 @@
 
             modalBody.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
-                        <span class="text-xs font-bold text-neutral-700 block">Фотографії товару (${p.images ? p.images.filter(Boolean).length : 0}):</span>
-                        ${imagesHtml}
-                        ${videoHtml}
-                    </div>
+                    <div class="space-y-3 max-h-[75vh] overflow-y-auto pr-1">${imagesHtml}${videoHtml}</div>
                     <div class="flex flex-col justify-between space-y-4">
                         <div>
                             <span class="text-xs uppercase tracking-wider text-neutral-500 font-bold">${p.brand || ''} • ${p.category}</span>
@@ -813,16 +805,15 @@
                     const imgUrl = (p.images && p.images[i]) ? p.images[i] : '';
                     if (imgUrl) {
                         photoSlotsHtml += `
-                            <div class="upload-slot border-emerald-500 ring-2 ring-emerald-500/20">
-                                <img src="${imgUrl}" alt="Фото ${i+1}">
-                                <div class="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[8px] text-center py-0.5 font-bold">Фото ${i+1} ✓</div>
+                            <div class="upload-slot">
+                                <img src="${imgUrl}">
                                 <div class="remove-x" onclick="window.removeProductMedia('${p.id}', 'image', ${i})">×</div>
                             </div>
                         `;
                     } else {
                         photoSlotsHtml += `
-                            <div class="upload-slot hover:border-brand-700 transition">
-                                <span class="text-center px-1">+ Фото ${i+1}</span>
+                            <div class="upload-slot">
+                                <span>+ Фото ${i+1}</span>
                                 <input type="file" accept="image/*" onchange="window.handleMediaUpload(event, '${p.id}', 'image', ${i})">
                             </div>
                         `;
@@ -830,31 +821,30 @@
                 }
 
                 let videoSlotHtml = '';
-                if (p.video && p.video.trim() !== '') {
+                if (p.video) {
                     videoSlotHtml = `
-                        <div class="upload-slot video-slot relative border-emerald-500 ring-2 ring-emerald-500/20">
-                            <video src="${p.video}" class="w-full h-full object-cover"></video>
-                            <div class="absolute bottom-1 left-1 bg-emerald-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold shadow">Відео додано ✓</div>
+                        <div class="upload-slot video-slot relative">
+                            <video src="${p.video}" controls class="w-full h-full object-cover"></video>
                             <div class="remove-x" onclick="window.removeProductMedia('${p.id}', 'video', 0)">×</div>
                         </div>
                     `;
                 } else {
                     videoSlotHtml = `
-                        <div class="upload-slot video-slot flex flex-col items-center justify-center bg-neutral-50 relative hover:border-brand-700 transition">
-                            <span class="text-xs text-neutral-600 font-medium">📹 Натисніть сюди або завантажте відео огляд</span>
+                        <div class="upload-slot video-slot flex flex-col items-center justify-center bg-neutral-50 relative">
+                            <span>+ Відео огляд</span>
                             <input type="file" accept="video/*" onchange="window.handleMediaUpload(event, '${p.id}', 'video', 0)" class="absolute inset-0 opacity-0 cursor-pointer">
                         </div>
                     `;
                 }
 
                 card.innerHTML = `
-                    <div class="flex justify-between items-center border-b pb-2 flex-wrap gap-2">
+                    <div class="flex justify-between items-center border-b pb-2">
                         <div>
                             <span class="font-bold text-xs">Товар #${index + 1}: ${p.title}</span>
                             <span class="ml-2 bg-amber-100 text-amber-900 text-[10px] px-2 py-0.5 rounded font-mono font-bold">Вага: ${prodSize}</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button onclick="window.saveSingleProduct('${p.id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shadow transition">💾 Зберегти товар</button>
+                            <button onclick="window.saveSingleProduct('${p.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shadow transition">💾 Зберегти товар</button>
                             <button onclick="window.deleteProduct('${p.id}')" class="text-red-500 font-bold text-xs hover:underline">Видалити</button>
                         </div>
                     </div>
@@ -898,14 +888,11 @@
                         <textarea id="p_desc_${p.id}" rows="2" class="w-full p-2 border rounded text-xs">${p.desc || ''}</textarea>
                     </div>
                     <div class="space-y-1 pt-1">
-                        <label class="block text-[11px] font-medium text-neutral-700 flex items-center justify-between">
-                            <span>Фотографії (до 6 штук):</span>
-                            <span class="text-[10px] text-emerald-600 font-bold">Зелена рамка = файл успішно завантажено ✓</span>
-                        </label>
+                        <label class="block text-[11px] font-medium text-neutral-600">Фотографії (до 6 штук):</label>
                         <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">${photoSlotsHtml}</div>
                     </div>
                     <div class="space-y-1 pt-1">
-                        <label class="block text-[11px] font-medium text-neutral-700">Відео огляд:</label>
+                        <label class="block text-[11px] font-medium text-neutral-600">Відео огляд:</label>
                         <div>${videoSlotHtml}</div>
                     </div>
                 `;
@@ -926,7 +913,6 @@
                 saveState();
                 renderAdminProducts();
                 updateStorageMeter();
-                alert(`✅ Фото #${index + 1} успішно завантажено та додано до товару!`);
             } else if (type === 'video') {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -935,7 +921,7 @@
                     saveState();
                     renderAdminProducts();
                     updateStorageMeter();
-                    alert("✅ Відео огляд успішно завантажено та збережено!");
+                    alert("✅ Відео успішно завантажено та збережено!");
                 };
             }
         }
@@ -1033,77 +1019,3 @@
                     </div>
                     <div class="text-[11px] text-neutral-600 bg-neutral-50 p-2 rounded">Опції: <b>${group.options.join(', ')}</b></div>
                 `;
-                list.appendChild(div);
-            });
-        }
-
-        window.toggleAllFiltersSidebar = function() {
-            state.sidebarFiltersEnabled = !state.sidebarFiltersEnabled;
-            saveState();
-            renderAdminFilters();
-            initApp();
-        }
-
-        window.addFilterGroup = function() {
-            const name = prompt("Назва нової групи фільтрів:", "Колір");
-            if (!name) return;
-            const id = 'group_' + Date.now();
-            const optsStr = prompt("Опції через кому:", "Чорний, Білий, Бежевий");
-            const options = optsStr ? optsStr.split(',').map(s => s.trim()).filter(Boolean) : ["Опція 1"];
-            if (!state.filterGroups) state.filterGroups = [];
-            state.filterGroups.push({ id, name, options });
-            renderAdminFilters();
-            saveState();
-            initApp();
-        }
-
-        window.editFilterGroupOptions = function(index) {
-            const group = state.filterGroups[index];
-            const newOpts = prompt(`Редагувати опції для "${group.name}":`, group.options.join(', '));
-            if (newOpts !== null) {
-                group.options = newOpts.split(',').map(s => s.trim()).filter(Boolean);
-                renderAdminFilters();
-                saveState();
-                initApp();
-            }
-        }
-
-        window.deleteFilterGroup = function(index) {
-            if (confirm("Бажаєте видалити цю групу фільтрів?")) {
-                state.filterGroups.splice(index, 1);
-                renderAdminFilters();
-                saveState();
-                initApp();
-            }
-        }
-
-        window.saveProductsChanges = function() {
-            saveState();
-            updateStorageMeter();
-            renderProducts();
-            alert("✅ Зміни в каталозі збережено!");
-        }
-
-        window.saveBannerSettings = function() {
-            state.banner.title = document.getElementById('adminBannerTitleInput').value;
-            state.banner.subtitle = document.getElementById('adminBannerSubItemInput').value;
-            state.banner.bgImage = document.getElementById('adminBannerImgInput').value;
-            state.logoText = document.getElementById('adminLogoTextInput').value.trim() || 'F';
-            state.logoImage = document.getElementById('adminLogoImgInput').value.trim();
-            saveState();
-            initApp();
-            alert("✅ Налаштування банера збережено!");
-        }
-
-        window.saveStoreSettings = function() {
-            state.storeName = document.getElementById('adminStoreNameInput').value;
-            state.telegramUser = document.getElementById('adminTelegramInput').value;
-            saveState();
-            initApp();
-            alert("✅ Налаштування магазину збережено!");
-        }
-
-        window.onload = initApp;
-    </script>
-</body>
-</html>
