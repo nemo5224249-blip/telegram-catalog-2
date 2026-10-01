@@ -369,7 +369,11 @@ const MAX_PHOTOS = 10;
 const AI_PHOTOS = 6; // скільки фото відправляти в Gemini для аналізу
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const IMG_MAX = 1080, IMG_Q = 0.72;   // сильніше стиснення: фото ~в 1,5 раза легші
-const GEMINI_GAP = 4000;              // пауза між товарами в архіві (щоб не впиратися в ліміт Google)
+const GEMINI_GAP = 3000;              // пауза між товарами в архіві
+// Очікування між повторами, якщо Google перевантажений (503) або ліміт (429):
+const DELAYS_FAST = [3000, 8000, 20000];          // основний прохід: швидко здаємося, товар повториться в кінці
+const DELAYS_SLOW = [5000, 15000, 45000, 90000];  // повтор невдалих: терплячіше, 90 с — лише остання спроба
+let geminiDelays = DELAYS_FAST;              // пауза між товарами в архіві (щоб не впиратися в ліміт Google)
 const CLEAN_EST = 220 * 1024;         // оцінка ваги старого фото без даних про розмір
 const LS_ADMIN = 'fs_admin', LS_KEY = 'fs_gemini_key', LS_MODEL = 'fs_gemini_model';
 const PAGE = 30;
@@ -686,7 +690,7 @@ function renderKeyWarn() {
 }
 
 /* ---------- Gemini ---------- */
-async function callGemini(parts, tries = 6) {
+async function callGemini(parts, tries = geminiDelays.length + 1) {
   const key = ls.get(LS_KEY); if (!key) throw new Error('NO_KEY');
   const model = ls.get(LS_MODEL) || DEFAULT_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
@@ -707,8 +711,8 @@ async function callGemini(parts, tries = 6) {
     const body = await r.text();
     if ((r.status === 429 || r.status >= 500) && a < tries) {
       const hint = Number((body.match(/"retryDelay"\s*:\s*"(\d+)/) || [])[1]) || 0;
-      const base = r.status === 429 ? 20000 : 10000;
-      await sleep(Math.min(90000, Math.max(hint * 1000 + 1000, base * a)));
+      const plan = geminiDelays[Math.min(a - 1, geminiDelays.length - 1)];
+      await sleep(Math.min(90000, Math.max(hint * 1000 + 500, plan)));
       continue;
     }
     if (/API key|API_KEY/i.test(body)) throw new Error('Невірний API-ключ Gemini');
@@ -1159,6 +1163,7 @@ window.arcStart = async function (retryOnly) {
       }
     }
     // Автоматичний повтор невдалих (до 2 кіл), з паузою, щоб Google «охолонув»
+    geminiDelays = DELAYS_SLOW;
     for (let round = 1; round <= 2 && !arc.stop && arc.pos >= arc.groups.length; round++) {
       const failed = arc.groups.map((g, i) => g.failed ? i : -1).filter(i => i >= 0);
       if (!failed.length) break;
@@ -1172,7 +1177,7 @@ window.arcStart = async function (retryOnly) {
     }
   } catch (e) { onDbError(e); arc.log.push(errMsg(e)); }
   finally {
-    arc.running = false; arc.current = '';
+    arc.running = false; arc.current = ''; geminiDelays = DELAYS_FAST;
     try { await wake?.release(); } catch (e) {}
     renderArcProgress(); renderArcGroups();
   }
