@@ -1,152 +1,1613 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title id="pageTitle">Fashion Стиль — Інтернет-магазин одягу</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: { extend: { colors: { brand: {
-                50: '#fdf8f6', 100: '#f2e8e5', 600: '#8c6d62', 700: '#73574d', 800: '#59423a', 900: '#402e28'
-            } } } }
-        }
-    </script>
-    <style>
-        * { -webkit-tap-highlight-color: transparent; }
-        input, select, textarea { font-size: 16px !important; }
-        header { padding-top: env(safe-area-inset-top, 0px); }
-        #mobileBottomBar { padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
-        #adminPanel, #cartDrawer { padding-top: env(safe-area-inset-top, 0px); }
-        body { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
-        @media (min-width: 768px) { body { padding-bottom: 0; } }
-
-        .upload-slot {
-            aspect-ratio: 1/1; border: 1px dashed #d4d4d4; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 10px; color: #737373; position: relative; overflow: hidden;
-            cursor: pointer; background: #fafafa; min-height: 44px;
-        }
-        .upload-slot img, .upload-slot video { width: 100%; height: 100%; object-fit: cover; }
-        .video-slot { aspect-ratio: unset; height: 90px; }
-        .upload-slot input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-        .upload-slot .remove-x {
-            position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,.7); color: #fff;
-            width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; font-size: 12px; z-index: 2; cursor: pointer;
-        }
-        .conn-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; }
-        .progress-bar { width:100%; background:#e5e5e5; height:6px; border-radius:3px; overflow:hidden; }
-        .progress-fill { height:100%; background:#73574d; transition:width .3s; }
-        .tag { display:inline-flex; align-items:center; gap:6px; border:1px solid #d4d4d4; background:#fafafa; padding:5px 6px 5px 12px; border-radius:20px; font-size:12px; margin:0 6px 6px 0; }
-        .tag button { background:none; border:none; color:#737373; cursor:pointer; padding:2px 4px; font-size:13px; }
-        .size-chip { border:1px solid #d4d4d4; border-radius:16px; padding:5px 12px; font-size:11px; cursor:pointer; background:#fff; }
-        .size-chip.active { background:#73574d; color:#fff; border-color:#73574d; }
-        .product-admin-card { border:1px solid #e5e5e5; border-radius:12px; padding:12px; margin-bottom:12px; background:#fafafa; }
-        .filter-group-card { border:1px solid #e5e5e5; border-radius:10px; padding:12px; margin-bottom:10px; background:#fff; }
-        .mini-icon-btn { background:none; border:none; color:#737373; cursor:pointer; padding:4px 6px; font-size:13px; }
-        .storage-warning { background:#fef08a; border: 1px solid #fcd34d; color:#92400e; padding: 12px; border-radius: 8px; font-size: 12px; margin-bottom: 12px; }
-        .storage-danger { background:#fee2e2; border: 1px solid #fca5a5; color:#991b1b; }
-        .import-tab-btn { padding: 12px 16px; border: none; background: #f3f4f6; cursor: pointer; font-weight: bold; text-sm; border-bottom: 3px solid transparent; transition: all 0.3s; }
-        .import-tab-btn.active { background: #fff; border-bottom-color: #73574d; color: #73574d; }
-        .history-item { border: 1px solid #e5e5e5; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #fafafa; font-size: 12px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#59423a">
+<title id="pageTitle">Fashion Стиль — Інтернет-магазин одягу</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: { colors: { brand: { 50:'#fdf8f6',100:'#f2e8e5',600:'#8c6d62',700:'#73574d',800:'#59423a',900:'#402e28' } } } } };
+</script>
+<style>
+*{-webkit-tap-highlight-color:transparent}
+input,select,textarea{font-size:16px!important}
+header{padding-top:env(safe-area-inset-top,0px)}
+#mobileBottomBar{padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+#adminPanel,#cartDrawer{padding-top:env(safe-area-inset-top,0px)}
+body{padding-bottom:calc(5rem + env(safe-area-inset-bottom,0px))}
+@media(min-width:768px){body{padding-bottom:0}}
+body.lock{overflow:hidden}
+.upload-slot{aspect-ratio:1/1;border:1px dashed #d4d4d4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#737373;position:relative;overflow:hidden;cursor:pointer;background:#fff;min-height:44px}
+.upload-slot img,.upload-slot video{width:100%;height:100%;object-fit:cover}
+.video-slot{aspect-ratio:unset;height:90px}
+.upload-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.remove-x{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.75);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:2;cursor:pointer}
+.conn-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+.progress-bar{width:100%;background:#e5e5e5;height:6px;border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;background:#73574d;transition:width .3s}
+.tag{display:inline-flex;align-items:center;gap:6px;border:1px solid #d4d4d4;background:#fff;padding:5px 6px 5px 12px;border-radius:20px;font-size:12px;margin:0 6px 6px 0}
+.tag button{background:none;border:none;color:#737373;cursor:pointer;padding:2px 6px;font-size:14px}
+.size-chip{border:1px solid #d4d4d4;border-radius:16px;padding:6px 12px;font-size:12px;cursor:pointer;background:#fff;min-height:34px}
+.size-chip.active{background:#73574d;color:#fff;border-color:#73574d}
+.product-admin-card{border:1px solid #e5e5e5;border-radius:12px;padding:10px;margin-bottom:10px;background:#fff}
+.filter-group-card{border:1px solid #e5e5e5;border-radius:10px;padding:12px;margin-bottom:10px;background:#fff}
+.mini-icon-btn{background:none;border:none;color:#737373;cursor:pointer;padding:6px 8px;font-size:14px}
+.adm-sec{border:1px solid #e5e5e5;border-radius:12px;background:#fafafa}
+.adm-sec>summary{list-style:none;cursor:pointer;padding:14px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;min-height:50px}
+.adm-sec>summary::-webkit-details-marker{display:none}
+.adm-sec>summary::after{content:'▾';color:#a3a3a3}
+.adm-sec[open]>summary::after{content:'▴'}
+.adm-body{padding:0 14px 14px}
+.tab-btn{flex:1;padding:10px 4px;font-size:12px;font-weight:700;border-radius:10px;background:#ececec;color:#525252;min-height:44px}
+.tab-btn.active{background:#73574d;color:#fff}
+.inp{width:100%;padding:8px 12px;border:1px solid #d4d4d4;border-radius:8px;background:#fff}
+.lbl{display:block;font-size:11px;color:#525252;margin-bottom:3px}
+.btn-main,.btn-sec,.btn-del{border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;position:relative;overflow:hidden}
+.btn-main{background:#73574d;color:#fff}
+.btn-main:active{background:#59423a}
+.btn-sec{background:#fff;border:1px solid #d4d4d4;color:#404040}
+.btn-del{background:#fff;border:1px solid #fda4af;color:#e11d48}
+.sm{min-height:34px!important;padding:4px 10px!important;font-size:11px!important}
+.file-inp{width:100%;color:#737373}
+.file-inp::file-selector-button{margin-right:8px;padding:8px 12px;border:0;border-radius:8px;background:#73574d;color:#fff;font-weight:600}
+.warn{background:#fef3c7;border:1px solid #fcd34d;color:#92400e;padding:10px 12px;border-radius:10px;font-size:12px;margin-top:8px}
+.warn.danger{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-top:3px}
+.history-item{border:1px solid #e5e5e5;border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;font-size:12px}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#262626;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:100;max-width:90vw;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+</style>
 </head>
 <body class="bg-brand-50 text-neutral-800 font-sans antialiased min-h-screen flex flex-col">
 
-    <!-- MAIN HEADER -->
-    <header class="bg-white border-b border-neutral-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-7xl mx-auto px-3 py-3 flex items-center justify-between gap-2">
-            <button onclick="window.filterCategory('all'); window.scrollTo({top:0, behavior:'smooth'});" class="flex items-center gap-2 text-left shrink-0">
-                <div id="headerLogoIcon" class="bg-brand-700 text-white w-9 h-9 rounded-lg flex items-center justify-center font-bold text-lg overflow-hidden">F</div>
-                <div>
-                    <span id="headerStoreName" class="text-base font-bold tracking-wider text-neutral-900 block leading-none">FASHION СТИЛЬ</span>
-                    <span id="connStatus" class="text-[9px] text-neutral-500 tracking-widest uppercase"><span class="conn-dot" style="background:#ccc;"></span>Підключення…</span>
-                </div>
-            </button>
+<!-- ШАПКА -->
+<header class="bg-white border-b border-neutral-200 sticky top-0 z-40 shadow-sm">
+  <div class="max-w-7xl mx-auto px-3 py-3 flex items-center justify-between gap-2">
+    <button onclick="window.filterCategory('all'); window.scrollTo({top:0,behavior:'smooth'});" class="flex items-center gap-2 text-left shrink-0">
+      <div id="headerLogoIcon" class="bg-brand-700 text-white w-9 h-9 rounded-lg flex items-center justify-center font-bold text-lg overflow-hidden">F</div>
+      <div>
+        <span id="headerStoreName" class="text-base font-bold tracking-wider text-neutral-900 block leading-none">FASHION СТИЛЬ</span>
+        <span id="connStatus" class="text-[9px] text-neutral-500 tracking-widest uppercase"><span class="conn-dot" style="background:#ccc"></span>Підключення…</span>
+      </div>
+    </button>
+    <div class="flex-1 max-w-md mx-2">
+      <div class="relative">
+        <input type="search" id="searchInput" placeholder="Пошук товарів..." class="w-full pl-8 pr-3 py-1.5 border border-neutral-300 rounded-full focus:outline-none focus:border-brand-700">
+        <span class="absolute left-2.5 top-2 text-neutral-400 text-xs">🔍</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button onclick="window.requestAdminAccess()" class="p-2.5 bg-neutral-100 hover:bg-neutral-200 rounded-lg text-sm min-w-[40px] min-h-[40px]" title="Адмін-панель">⚙️</button>
+      <button onclick="window.toggleCartDrawer()" class="flex items-center gap-1 px-3 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-medium shadow-sm min-h-[40px]">
+        🛒 <span id="cartBadge" class="bg-amber-400 text-neutral-900 text-[10px] px-1.5 rounded-full font-bold">0</span>
+      </button>
+    </div>
+  </div>
+  <nav class="bg-brand-800 text-white px-2">
+    <div id="categoryNav" class="max-w-7xl mx-auto flex items-center gap-4 overflow-x-auto py-2.5 text-xs whitespace-nowrap"></div>
+  </nav>
+</header>
 
-            <div class="flex-1 max-w-md mx-2">
-                <div class="relative">
-                    <input type="text" id="searchInput" placeholder="Пошук товарів..."
-                           class="w-full pl-8 pr-3 py-1.5 border border-neutral-300 rounded-full focus:outline-none focus:border-brand-700">
-                    <span class="absolute left-2.5 top-2 text-neutral-400 text-xs">🔍</span>
-                </div>
-            </div>
+<!-- БАНЕР -->
+<section id="bannerSection" class="max-w-7xl w-full mx-auto px-3 mt-3">
+  <div id="dynamicBannerContainer" class="relative rounded-xl overflow-hidden shadow-md h-44 sm:h-64 bg-brand-800 flex items-center"></div>
+</section>
 
-            <div class="flex items-center gap-1.5 shrink-0">
-                <button onclick="window.requestAdminAccess()" class="p-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-sm font-medium transition min-w-[40px] min-h-[40px]" title="Адмін-панель">⚙️</button>
-                <button onclick="window.toggleCartDrawer()" class="relative flex items-center gap-1 px-3 py-2.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-medium transition shadow-sm min-h-[40px]">
-                    🛒 <span id="cartBadge" class="bg-amber-400 text-neutral-900 text-[10px] px-1.5 py-0.2 rounded-full font-bold">0</span>
-                </button>
-            </div>
+<main class="max-w-7xl mx-auto px-3 py-4 flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-4">
+  <aside class="space-y-3 lg:col-span-1 bg-white p-3 rounded-xl shadow-sm border border-neutral-200 h-fit">
+    <div class="flex justify-between items-center cursor-pointer lg:cursor-default min-h-[36px]" onclick="window.toggleMobileFilters()">
+      <h3 class="font-bold text-sm text-neutral-900">Фільтри та сортування</h3>
+      <span id="filterToggleIcon" class="lg:hidden text-neutral-500 font-bold text-xs">▼</span>
+    </div>
+    <div id="filterContent" class="space-y-3 hidden lg:block pt-2">
+      <div>
+        <label class="block text-[11px] font-medium text-neutral-700 mb-1">Ціна (грн):</label>
+        <div class="flex gap-2 items-center">
+          <input type="number" inputmode="numeric" id="minPrice" placeholder="Від" oninput="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
+          <span>-</span>
+          <input type="number" inputmode="numeric" id="maxPrice" placeholder="До" oninput="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
         </div>
+      </div>
+      <div id="dynamicFilterGroups" class="space-y-3"></div>
+      <div>
+        <label class="block text-[11px] font-medium text-neutral-700 mb-1">Сортування:</label>
+        <select id="sortOrder" onchange="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
+          <option value="default">Спочатку нові</option>
+          <option value="cheap">Від дешевих до дорогих</option>
+          <option value="expensive">Від дорогих до дешевих</option>
+        </select>
+      </div>
+      <button onclick="window.resetFilters()" class="w-full py-2 bg-neutral-100 hover:bg-neutral-200 rounded-lg text-xs font-medium min-h-[40px]">Скинути фільтри</button>
+    </div>
+  </aside>
 
-        <nav class="bg-brand-800 text-white px-2">
-            <div id="categoryNav" class="max-w-7xl mx-auto flex items-center gap-4 overflow-x-auto py-2.5 text-xs whitespace-nowrap"></div>
-        </nav>
-    </header>
+  <section class="lg:col-span-3 flex flex-col gap-3">
+    <div class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-neutral-200 shadow-sm">
+      <h1 id="catalogTitle" class="text-sm font-bold text-neutral-900">Каталог товарів</h1>
+      <div class="text-[11px] text-neutral-500" id="productCount">Знайдено: 0</div>
+    </div>
+    <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 gap-2.5"></div>
+  </section>
+</main>
 
-    <section class="max-w-7xl mx-auto px-3 mt-3">
-        <div id="dynamicBannerContainer" class="relative rounded-xl overflow-hidden shadow-md h-44 bg-neutral-900 flex items-center"></div>
-    </section>
+<div id="mobileBottomBar" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 z-40 flex justify-around items-center pt-2 px-1 shadow-2xl">
+  <button onclick="window.filterCategory('all'); window.scrollTo({top:0,behavior:'smooth'});" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">🏠</span>Головна</button>
+  <button onclick="window.toggleCartDrawer()" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">🛒</span>Кошик</button>
+  <button onclick="window.openTelegram()" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">💬</span>Telegram</button>
+</div>
 
-    <main class="max-w-7xl mx-auto px-3 py-4 flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-4">
+<!-- ===================== АДМІН-ПАНЕЛЬ ===================== -->
+<div id="adminOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.closeAdmin()"></div>
+<div id="adminPanel" class="fixed right-0 top-0 h-full w-full max-w-xl bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+  <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
+    <h2 class="font-bold text-lg">Панель адміністратора</h2>
+    <button onclick="window.closeAdmin()" class="text-xl font-bold w-10 h-10">&times;</button>
+  </div>
+  <div class="p-3 sm:p-5 flex-1 overflow-y-auto space-y-3" style="padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))">
 
-        <aside class="space-y-3 lg:col-span-1 bg-white p-3 rounded-xl shadow-sm border border-neutral-200 h-fit">
-            <div class="flex justify-between items-center cursor-pointer lg:cursor-default" onclick="window.toggleMobileFilters()">
-                <h3 class="font-bold text-sm text-neutral-900">Фільтри та сортування</h3>
-                <span id="filterToggleIcon" class="lg:hidden text-neutral-500 font-bold text-xs">▼</span>
-            </div>
-
-            <div id="filterContent" class="space-y-3 hidden lg:block pt-2">
-                <div>
-                    <label class="block text-[11px] font-medium text-neutral-700 mb-1">Ціна (UAH):</label>
-                    <div class="flex gap-2 items-center">
-                        <input type="number" id="minPrice" placeholder="Від" oninput="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
-                        <span>-</span>
-                        <input type="number" id="maxPrice" placeholder="До" oninput="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
-                    </div>
-                </div>
-
-                <div id="dynamicFilterGroups" class="space-y-3"></div>
-
-                <div>
-                    <label class="block text-[11px] font-medium text-neutral-700 mb-1">Сортування:</label>
-                    <select id="sortOrder" onchange="window.applyFilters()" class="w-full px-2 py-1.5 border rounded-lg">
-                        <option value="default">За замовчуванням</option>
-                        <option value="cheap">Від дешевих до дорогих</option>
-                        <option value="expensive">Від дорогих до дешевих</option>
-                    </select>
-                </div>
-
-                <button onclick="window.resetFilters()" class="w-full py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-xs font-medium transition">Скинути фільтри</button>
-            </div>
-        </aside>
-
-        <section class="lg:col-span-3 flex flex-col gap-3">
-            <div class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-neutral-200 shadow-sm">
-                <h1 id="catalogTitle" class="text-sm font-bold text-neutral-900">Каталог товарів</h1>
-                <div class="text-[11px] text-neutral-500" id="productCount">Знайдено: 0</div>
-            </div>
-            <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5"></div>
-        </section>
-    </main>
-
-    <div id="mobileBottomBar" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 z-40 flex justify-around items-center pt-2 px-1 shadow-2xl">
-        <button onclick="window.filterCategory('all'); window.scrollTo({top:0, behavior:'smooth'});" class="flex flex-col items-center text-neutral-600 hover:text-brand-700 text-[10px] min-h-[44px] justify-center px-2"><span class="text-base">🏠</span> Головна</button>
-        <button onclick="window.toggleCartDrawer()" class="flex flex-col items-center text-neutral-600 hover:text-brand-700 text-[10px] relative min-h-[44px] justify-center px-2"><span class="text-base">🛒</span> Кошик</button>
-        <button onclick="window.open('https://t.me/yuli666666', '_blank')" class="flex flex-col items-center text-neutral-600 hover:text-brand-700 text-[10px] min-h-[44px] justify-center px-2"><span class="text-base">💬</span> Telegram</button>
+    <!-- 1. Сховище фото -->
+    <div class="adm-sec p-4">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="font-bold text-sm">☁️ Сховище фото (ліміт 1 ГБ)</h3>
+        <button onclick="window.recountStorage()" class="btn-sec sm">Перерахувати</button>
+      </div>
+      <div id="storageText" class="text-xs mb-1">…</div>
+      <div class="progress-bar" style="height:12px"><div class="progress-fill" id="storageBar" style="width:0%"></div></div>
+      <div id="storageLeft" class="text-[11px] text-neutral-500 mt-1"></div>
+      <div id="storageWarn"></div>
     </div>
 
-    <!-- ADMIN PANEL -->
-    <div id="adminOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.toggleAdminPanel()"></div>
-    <div id="adminPanel" class="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
-        <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
-            <h2 class="font-bold text-lg">Панель адміністратора</h2>
-            <button onclick="window.toggleAdminPanel()" class="text-white hover:text-amber-300 text-xl font-bold w-10 h-10">&times;</button>
+    <!-- 2. Імпорт -->
+    <details class="adm-sec" open>
+      <summary>🤖 Імпорт товарів (Gemini)</summary>
+      <div class="adm-body space-y-3">
+        <div id="noKeyWarn"></div>
+        <div class="flex gap-1.5">
+          <button class="tab-btn active" data-tab="step" onclick="window.setImportTab('step')">1. Покроково</button>
+          <button class="tab-btn" data-tab="auto" onclick="window.setImportTab('auto')">2. Автоматично</button>
+          <button class="tab-btn" data-tab="archive" onclick="window.setImportTab('archive')">3. Архів</button>
         </div>
-        <div class="p-6 flex-1 overflow-y-auto space-y-6">
+        <p id="importTabHint" class="text-[12px] text-neutral-600"></p>
 
-            <!-- STORAGE COUNTER - ОЧЕНЬ ВАЖНО! -->
-            <div id="storageWarningBox" class=""></div>
-            <div class="bg-neutral-50 p
+        <div id="postForm" class="space-y-3">
+          <div>
+            <label class="lbl">Фото товару (до 5 шт.)</label>
+            <input type="file" id="stepPhotos" accept="image/*" multiple onchange="window.onStepPhotos(this)" class="file-inp">
+            <div id="stepThumbs" class="flex flex-wrap gap-1.5 mt-2"></div>
+          </div>
+          <div>
+            <label class="lbl">Відео (необов'язково, до 2 хв і 50 МБ)</label>
+            <input type="file" id="stepVideo" accept="video/*" onchange="window.onStepVideo(this)" class="file-inp">
+          </div>
+          <div>
+            <label class="lbl">Текст поста з Telegram</label>
+            <textarea id="stepText" rows="2" class="inp" placeholder="Напр.: 2250+вага"></textarea>
+          </div>
+          <div id="stepActions" class="flex flex-col gap-2"></div>
+          <div id="stepStatus" class="text-xs"></div>
+          <div id="stepPreview"></div>
+        </div>
+
+        <div id="archiveForm" class="space-y-2 hidden">
+          <div class="text-[12px] text-neutral-600 bg-white border rounded-lg p-3 leading-relaxed">
+            Найточніше: <b>Telegram Desktop</b> → канал → ⋮ → «Експорт історії чату» → увімкніть «Фото» і «Відео», формат <b>JSON</b>. Потім стисніть папку в ZIP або оберіть її цілком.<br>
+            Без цього файлу система згрупує фото сама (за часом або через Gemini).
+          </div>
+          <label class="btn-sec w-full">📦 Обрати ZIP-архів<input type="file" accept=".zip,application/zip" onchange="window.onArchivePick(this,'zip')" class="absolute inset-0 opacity-0"></label>
+          <label class="btn-sec w-full">📁 Обрати папку (комп'ютер)<input type="file" webkitdirectory multiple onchange="window.onArchivePick(this,'dir')" class="absolute inset-0 opacity-0"></label>
+          <label class="btn-sec w-full">🖼 Обрати багато фото<input type="file" accept="image/*,video/*,.json" multiple onchange="window.onArchivePick(this,'files')" class="absolute inset-0 opacity-0"></label>
+          <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcPublish" class="w-5 h-5"> Публікувати одразу (без перевірки)</label>
+          <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcAiGroup" class="w-5 h-5" checked> Групувати фото через Gemini, якщо немає result.json</label>
+          <div id="archiveStatus" class="text-xs"></div>
+          <div id="archiveProgress"></div>
+          <div id="archiveGroups"></div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 3. Товари -->
+    <details class="adm-sec" id="secProducts" open>
+      <summary>📦 Товари <span id="admCount" class="text-xs font-normal text-neutral-500 ml-1 mr-auto"></span></summary>
+      <div class="adm-body space-y-2">
+        <div class="flex gap-2">
+          <input id="admSearch" type="search" class="inp" placeholder="Пошук у товарах…" oninput="window.renderAdminProducts(true)">
+          <button onclick="window.addManualProduct()" class="btn-main whitespace-nowrap">➕ Вручну</button>
+        </div>
+        <div class="flex gap-1.5 overflow-x-auto pb-1" id="admStatusTabs"></div>
+        <div id="admImportFilter"></div>
+        <div id="adminProductList"></div>
+        <button id="admMore" onclick="window.admShowMore()" class="btn-sec w-full hidden">Показати ще</button>
+      </div>
+    </details>
+
+    <!-- 4. Історія імпортів -->
+    <details class="adm-sec">
+      <summary>🕓 Історія імпортів</summary>
+      <div class="adm-body" id="importHistory"></div>
+    </details>
+
+    <!-- 5. Банер -->
+    <details class="adm-sec">
+      <summary>🖼 Банер на головній</summary>
+      <div class="adm-body space-y-2">
+        <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="bnEnabled" class="w-5 h-5"> Показувати банер</label>
+        <div><label class="lbl">Маленький напис</label><input id="bnTag" class="inp" placeholder="Нова колекція 2026"></div>
+        <div><label class="lbl">Заголовок</label><input id="bnTitle" class="inp"></div>
+        <div><label class="lbl">Текст</label><textarea id="bnSub" rows="2" class="inp"></textarea></div>
+        <div><label class="lbl">Фото банера (необов'язково — без фото буде кольоровий фон)</label>
+          <div id="bnPreview" class="mb-2"></div>
+          <input type="file" id="bnFile" accept="image/*" class="file-inp">
+        </div>
+        <button onclick="window.saveBanner()" class="btn-main w-full">Зберегти банер</button>
+      </div>
+    </details>
+
+    <!-- 6. Налаштування -->
+    <details class="adm-sec" id="secSettings">
+      <summary>⚙️ Налаштування</summary>
+      <div class="adm-body space-y-2">
+        <div><label class="lbl">Назва магазину</label><input id="setStoreName" class="inp"></div>
+        <div><label class="lbl">Telegram для замовлень (без @)</label><input id="setTelegram" class="inp"></div>
+        <div><label class="lbl">Логотип</label><input type="file" id="setLogo" accept="image/*" class="file-inp"></div>
+        <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="setAllowNew" class="w-5 h-5"> Gemini може сам створювати нові категорії</label>
+        <button onclick="window.saveStoreSettings()" class="btn-main w-full">Зберегти налаштування</button>
+        <div class="border-t pt-3 mt-2 space-y-2">
+          <div class="font-bold text-xs">🔑 Gemini (зберігається тільки на цьому пристрої)</div>
+          <div><label class="lbl">API-ключ (з aistudio.google.com/apikey)</label><input id="setGeminiKey" type="password" class="inp" autocomplete="off" placeholder="AIza…"></div>
+          <div><label class="lbl">Модель</label><input id="setGeminiModel" class="inp"></div>
+          <div class="flex gap-2"><button onclick="window.saveGemini()" class="btn-main flex-1">Зберегти ключ</button><button onclick="window.testGemini()" class="btn-sec flex-1">Перевірити</button></div>
+          <div id="geminiTest" class="text-xs"></div>
+        </div>
+        <div class="border-t pt-3 mt-2">
+          <button onclick="window.logoutDevice()" class="btn-del w-full">Вийти з адмінки на цьому пристрої</button>
+        </div>
+      </div>
+    </details>
+
+    <!-- 7. Категорії -->
+    <details class="adm-sec">
+      <summary>🗂 Розділи (категорії)</summary>
+      <div class="adm-body">
+        <div id="adminCategoryTags" class="mb-2"></div>
+        <div class="flex gap-2">
+          <input type="text" id="newCategoryInput" placeholder="Новий розділ" class="inp">
+          <button onclick="window.addCategory()" class="btn-main">+</button>
+        </div>
+      </div>
+    </details>
+
+    <!-- 8. Фільтри -->
+    <details class="adm-sec">
+      <summary>🎛 Параметри фільтрів</summary>
+      <div class="adm-body">
+        <p class="text-[11px] text-neutral-500 mb-3">Групи на кшталт «Колір», «Тканина» зі своїми значеннями. Gemini теж їх заповнює.</p>
+        <div id="adminFilterGroups"></div>
+        <div class="flex gap-2 mt-2">
+          <input type="text" id="newFilterGroupInput" placeholder="Нова група (напр. Колір)" class="inp">
+          <button onclick="window.addFilterGroup()" class="btn-main">+</button>
+        </div>
+      </div>
+    </details>
+
+    <!-- 9. Резервна копія -->
+    <details class="adm-sec">
+      <summary>💾 Резервна копія</summary>
+      <div class="adm-body space-y-2">
+        <p class="text-[11px] text-neutral-500">Товари зберігаються в базі окремо від коду сайту — оновлення сайту їх не видаляє. Копія — додаткова страховка.</p>
+        <button onclick="window.exportBackup()" class="btn-sec w-full">⬇️ Завантажити копію всіх товарів</button>
+        <label class="btn-sec w-full">⬆️ Відновити з копії (лише додає відсутні)<input type="file" accept=".json,application/json" onchange="window.importBackup(this)" class="absolute inset-0 opacity-0"></label>
+      </div>
+    </details>
+
+    <button onclick="window.closeAdmin()" class="btn-sec w-full">Закрити панель</button>
+  </div>
+</div>
+
+<!-- КОШИК -->
+<div id="cartOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.toggleCartDrawer()"></div>
+<div id="cartDrawer" class="fixed right-0 top-0 h-full w-full max-w-md bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+  <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
+    <h2 class="font-bold text-lg">Ваш кошик</h2>
+    <button onclick="window.toggleCartDrawer()" class="text-xl font-bold w-10 h-10">&times;</button>
+  </div>
+  <div id="cartItemsContainer" class="p-4 flex-1 overflow-y-auto space-y-3"></div>
+  <div class="p-4 border-t bg-neutral-50 space-y-3" style="padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))">
+    <div class="flex justify-between font-bold text-sm"><span>Загальна сума:</span><span id="cartTotalPrice">0 грн</span></div>
+    <button onclick="window.checkoutTelegram()" id="checkoutBtn" class="w-full py-3 bg-[#0088cc] hover:bg-[#0077b5] text-white rounded-xl font-bold text-xs shadow-md min-h-[48px]">✈️ Оформити замовлення в Telegram</button>
+  </div>
+</div>
+
+<!-- КАРТКА ТОВАРУ -->
+<div id="productModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-3" onclick="if(event.target===this)window.closeProductModal()">
+  <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
+    <button onclick="window.closeProductModal()" class="absolute right-3 top-3 bg-white/90 w-9 h-9 rounded-full flex items-center justify-center font-bold z-10 shadow">&times;</button>
+    <div id="modalContent" class="p-4 space-y-3 max-h-[85vh] overflow-y-auto"></div>
+  </div>
+</div>
+
+<footer class="bg-neutral-900 text-neutral-300 pt-8 pb-8 md:pb-6 mt-auto text-xs">
+  <div class="max-w-7xl mx-auto px-3 mb-6">
+    <div class="flex items-center gap-2 mb-2">
+      <div id="footerLogoIcon" class="bg-brand-700 text-white w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm overflow-hidden">F</div>
+      <span id="footerStoreName" class="text-white font-bold tracking-wider">FASHION СТИЛЬ</span>
+    </div>
+    <p class="text-neutral-400 text-[11px] mb-2">Інтернет-магазин сучасного одягу та аксесуарів.</p>
+    <a id="footerTg" href="#" target="_blank" class="text-amber-400 underline font-medium text-[11px]"></a>
+  </div>
+  <div id="footerCopy" class="max-w-7xl mx-auto px-3 pt-4 border-t border-neutral-800 text-center text-[10px] text-neutral-500"></div>
+</footer>
+
+<div id="toast" class="hidden"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDc-8E2Sqzp27PPnNf9MYys9aaapD9N2xk",
+  authDomain: "premium-luxe-shop.firebaseapp.com",
+  databaseURL: "https://premium-luxe-shop-default-rtdb.firebaseio.com",
+  projectId: "premium-luxe-shop",
+  storageBucket: "premium-luxe-shop.firebasestorage.app",
+  messagingSenderId: "461518983018",
+  appId: "1:461518983018:web:fae25cc1dec5da07c35f13"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+const settingsRef = doc(db, 'catalog', 'fashionStyleData');   // налаштування (як і раніше)
+const statsRef = doc(db, 'catalog', 'storageStats');          // лічильник зайнятого місця
+const productsCol = collection(db, 'products');               // кожен товар — окремий документ
+const importsCol = collection(db, 'imports');                 // історія імпортів
+
+/* ---------- Константи ---------- */
+const ADMIN_HASH = '05d50cf358ae70e7c9aa5fe49b6bfcaf353037f40e61083ce95c1c801c548e4f'; // SHA-256 пароля
+const STORAGE_LIMIT = 1024 * 1024 * 1024; // 1 ГБ
+const MAX_PHOTOS = 5;
+const DEFAULT_MODEL = 'gemini-2.5-flash';
+const LS_ADMIN = 'fs_admin', LS_KEY = 'fs_gemini_key', LS_MODEL = 'fs_gemini_model';
+const PAGE = 30;
+const DEFAULT_SETTINGS = {
+  storeName: 'Fashion Стиль', storeLogo: null, telegram: 'yuli666666',
+  categories: ['Жіночий одяг', 'Чоловічий одяг', 'Верхній одяг', 'Взуття', 'Аксесуари'],
+  filterGroups: [], allowNewCategories: true,
+  banner: { enabled: true, tag: 'Нова колекція 2026', title: 'Свіжі тренди моди', subtitle: 'Вишуканий одяг європейської якості.', image: null }
+};
+const STATUS = { published: ['В магазині', 'bg-emerald-100 text-emerald-800'], draft: ['Чернетка', 'bg-amber-100 text-amber-800'], hidden: ['Приховано', 'bg-neutral-200 text-neutral-700'] };
+
+/* ---------- Стан ---------- */
+const clone = o => JSON.parse(JSON.stringify(o));
+let settings = clone(DEFAULT_SETTINGS);
+let products = [], imports = [], stats = { usedBytes: 0, fileCount: 0 };
+let settingsLoaded = false, productsLoaded = false, statsLoaded = false, statsExists = true;
+let isAdmin = false, currentCategory = 'all', selectedFilters = {}, cart = [];
+let expanded = new Set(), admLimit = PAGE, admStatus = 'all', admImport = null;
+let importTab = 'step', stepFiles = [], stepVideo = null, stepUrls = [], draft = null, busy = false;
+let arc = null, arcThumbs = new Map();
+
+/* ---------- Допоміжні ---------- */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const mb = b => ((b || 0) / 1048576).toFixed(1);
+const newId = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const ls = {
+  get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+  del: k => { try { localStorage.removeItem(k); } catch (e) {} }
+};
+const visible = p => !p.status || p.status === 'published';
+const fmtDate = t => new Date(t).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const findP = id => products.find(p => p._id === id);
+const errMsg = e => e?.message === 'NO_KEY' ? 'Немає API-ключа Gemini (розділ «Налаштування»)' : e?.message === 'LIMIT' ? 'Досягнуто ліміт 1 ГБ' : (e?.message || 'Невідома помилка');
+
+function toast(msg, ms = 2600) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add('hidden'), ms);
+}
+let permWarned = false;
+function onDbError(e) {
+  console.error(e);
+  if (e?.code === 'permission-denied' && !permWarned) {
+    permWarned = true;
+    alert('Firebase заблокував доступ до бази. Потрібно оновити правила Firestore (див. інструкцію).');
+  }
+}
+function setConn(ok) {
+  $('connStatus').innerHTML = ok
+    ? '<span class="conn-dot" style="background:#22c55e"></span>Онлайн'
+    : '<span class="conn-dot" style="background:#ef4444"></span>Немає з’єднання';
+}
+const normMedia = m => !m ? null : (typeof m === 'string' ? { url: m, path: null } : m);
+function normalizeProduct(p) {
+  return {
+    id: p.id ?? null, title: p.title || '', price: Number(p.price) || 0, priceNote: p.priceNote || '',
+    category: p.category || '', filters: p.filters || {}, color: p.color || '', material: p.material || '',
+    images: (p.images || []).map(normMedia).filter(Boolean), video: normMedia(p.video), desc: p.desc || '',
+    status: p.status || 'published', createdAt: p.createdAt || 0, importId: p.importId || null,
+    sourceKey: p.sourceKey || null, source: p.source || ''
+  };
+}
+
+/* ---------- Підключення до бази ---------- */
+onSnapshot(settingsRef, async snap => {
+  if (!snap.exists()) {
+    try { await setDoc(settingsRef, { ...DEFAULT_SETTINGS, productsMigrated: true }); } catch (e) { onDbError(e); }
+    return;
+  }
+  const d = snap.data();
+  settings = { ...clone(DEFAULT_SETTINGS), ...d };
+  settings.banner = { ...DEFAULT_SETTINGS.banner, ...(d.banner || {}) };
+  settings.filterGroups = (d.filterGroups || []).filter(g => g && g.name !== 'Розмір').map(g => ({ name: g.name, values: g.values || g.options || [] }));
+  delete settings.products; delete settings.sizes;
+  settingsLoaded = true; setConn(true);
+  if (Array.isArray(d.products) && d.products.length && !d.productsMigrated) migrateLegacy(d.products);
+  renderStore();
+  if (isAdmin) { renderAdminCategories(); renderAdminFilterGroups(); window.renderAdminProducts(); }
+}, e => { setConn(false); onDbError(e); });
+
+onSnapshot(productsCol, snap => {
+  products = snap.docs.map(d => ({ ...normalizeProduct(d.data()), _id: d.id }));
+  products.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  productsLoaded = true;
+  renderStore();
+  if (isAdmin) { window.renderAdminProducts(); renderHistory(); }
+}, onDbError);
+
+onSnapshot(importsCol, snap => {
+  imports = snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  if (isAdmin) renderHistory();
+}, onDbError);
+
+onSnapshot(statsRef, s => {
+  statsLoaded = true; statsExists = s.exists();
+  if (s.exists()) stats = { usedBytes: s.data().usedBytes || 0, fileCount: s.data().fileCount || 0 };
+  renderStorage();
+  if (!statsExists && isAdmin) window.recountStorage();
+}, onDbError);
+
+/* Старі товари з масиву переносяться в окрему колекцію. Старий масив НЕ видаляється — лишається як резерв. */
+let migrating = false;
+async function migrateLegacy(list) {
+  if (migrating) return; migrating = true;
+  try {
+    const b = writeBatch(db);
+    list.forEach((p, i) => {
+      const id = String(p.id ?? newId());
+      b.set(doc(productsCol, id), clone({ ...normalizeProduct(p), id, status: p.status || 'published', createdAt: p.createdAt || (Date.now() - i * 1000) }), { merge: true });
+    });
+    b.update(settingsRef, { productsMigrated: true });
+    await b.commit();
+    toast('Товари перенесено в нове сховище ✓');
+  } catch (e) { onDbError(e); } finally { migrating = false; }
+}
+
+/* ---------- Збереження ---------- */
+async function saveSettings() {
+  if (!settingsLoaded) { toast('Зачекайте — дані ще завантажуються'); throw new Error('Дані ще завантажуються'); }
+  const data = clone(settings); delete data.products;
+  try { await setDoc(settingsRef, data, { merge: true }); } catch (e) { onDbError(e); throw e; }
+}
+const cleanP = p => { const { _id, ...rest } = p; return clone(rest); };
+async function saveProduct(p) { try { await setDoc(doc(productsCol, p._id), cleanP(p)); } catch (e) { onDbError(e); throw e; } }
+async function patchProduct(id, data) { try { await updateDoc(doc(productsCol, id), clone(data)); } catch (e) { onDbError(e); throw e; } }
+async function batchPatch(items) {
+  for (let i = 0; i < items.length; i += 400) {
+    const b = writeBatch(db);
+    items.slice(i, i + 400).forEach(([id, data]) => b.update(doc(productsCol, id), clone(data)));
+    try { await b.commit(); } catch (e) { onDbError(e); throw e; }
+  }
+}
+
+/* ---------- Фото і ліміт 1 ГБ ---------- */
+function compressImage(file, max = 1200, q = 0.8) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      const k = Math.min(1, max / Math.max(w, h)); w = Math.round(w * k); h = Math.round(h * k);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? res(b) : rej(new Error('Не вдалося стиснути фото')), 'image/jpeg', q);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Не вдалося прочитати фото (формат не підтримується)')); };
+    img.src = url;
+  });
+}
+function blobToBase64(b) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(b); });
+}
+function assertSpace(bytes) {
+  if ((stats.usedBytes || 0) + bytes > STORAGE_LIMIT) {
+    alert(`⛔ Ліміт 1 ГБ!\nЗайнято ${mb(stats.usedBytes)} МБ. Видаліть непотрібні товари або фото, щоб звільнити місце.`);
+    throw new Error('LIMIT');
+  }
+}
+async function uploadBlob(blob, folder, ext, type) {
+  assertSpace(blob.size);
+  const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const r = sRef(storage, path);
+  await uploadBytes(r, blob, { contentType: type });
+  const url = await getDownloadURL(r);
+  stats.usedBytes += blob.size; stats.fileCount += 1; renderStorage();
+  setDoc(statsRef, { usedBytes: increment(blob.size), fileCount: increment(1) }, { merge: true }).catch(onDbError);
+  return { url, path, size: blob.size };
+}
+async function uploadImageFile(file, folder = 'products', max = 1200, q = 0.8) {
+  return uploadBlob(await compressImage(file, max, q), folder, 'jpg', 'image/jpeg');
+}
+function videoDuration(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => { URL.revokeObjectURL(url); res(v.duration); };
+    v.onerror = () => { URL.revokeObjectURL(url); rej(new Error('video')); };
+    v.src = url;
+  });
+}
+async function checkVideo(file) {
+  if (file.size > 50 * 1048576) throw new Error('Відео більше 50 МБ — стисніть його');
+  let d = 0; try { d = await videoDuration(file); } catch (e) {}
+  if (d > 120) throw new Error(`Відео довше 2 хвилин (${Math.round(d)} с)`);
+}
+async function uploadVideoFile(file, name = 'video.mp4') {
+  await checkVideo(file);
+  const ext = (name.split('.').pop() || 'mp4').toLowerCase();
+  return uploadBlob(file, 'products', ext, file.type || 'video/mp4');
+}
+/* Видалення файлу з хмари + зменшення лічильника */
+async function deleteMedia(m) {
+  if (!m || !m.path) return;
+  const r = sRef(storage, m.path);
+  let size = m.size;
+  try { if (!size) size = (await getMetadata(r)).size; } catch (e) {}
+  try { await deleteObject(r); }
+  catch (e) { if (e.code !== 'storage/object-not-found') { console.error(e); return; } size = 0; }
+  if (size) setDoc(statsRef, { usedBytes: increment(-size), fileCount: increment(-1) }, { merge: true }).catch(onDbError);
+}
+window.recountStorage = async function () {
+  if (!isAdmin) return;
+  $('storageText').textContent = 'Підрахунок… (може зайняти хвилину)';
+  let bytes = 0, count = 0;
+  try {
+    for (const folder of ['products', 'branding']) {
+      let list; try { list = await listAll(sRef(storage, folder)); } catch (e) { continue; }
+      for (let i = 0; i < list.items.length; i += 25) {
+        const metas = await Promise.all(list.items.slice(i, i + 25).map(r => getMetadata(r).catch(() => null)));
+        metas.forEach(m => { if (m) { bytes += m.size; count++; } });
+      }
+    }
+    stats = { usedBytes: bytes, fileCount: count };
+    await setDoc(statsRef, { usedBytes: bytes, fileCount: count, recountedAt: Date.now() });
+  } catch (e) { onDbError(e); }
+  renderStorage();
+};
+function renderStorage() {
+  if (!$('storageText')) return;
+  const used = stats.usedBytes || 0, pct = Math.min(100, used / STORAGE_LIMIT * 100);
+  $('storageText').innerHTML = `Зайнято <b>${mb(used)} МБ</b> з 1024 МБ · ${stats.fileCount || 0} файлів · ${pct.toFixed(1)}%`;
+  $('storageBar').style.width = pct + '%';
+  $('storageBar').style.background = pct >= 95 ? '#dc2626' : pct >= 80 ? '#f59e0b' : '#73574d';
+  const left = Math.max(0, STORAGE_LIMIT - used);
+  $('storageLeft').textContent = `Вільно: ${mb(left)} МБ (≈ ${Math.floor(left / (180 * 1024))} фото)`;
+  $('storageWarn').innerHTML = pct >= 95
+    ? '<div class="warn danger">⛔ Місце майже закінчилось. Нові фото не завантажаться — видаліть старі товари або фото.</div>'
+    : pct >= 80 ? '<div class="warn">⚠️ Зайнято понад 80% безкоштовного ліміту.</div>' : '';
+}
+
+/* ---------- Вхід в адмінку (запам'ятовує пристрій) ---------- */
+async function sha256(t) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+window.requestAdminAccess = async function () {
+  if (ls.get(LS_ADMIN) === ADMIN_HASH) { isAdmin = true; openAdmin(); return; }
+  const pwd = prompt('Введіть пароль адміністратора:');
+  if (pwd === null) return;
+  if (await sha256(pwd.trim()) === ADMIN_HASH) { ls.set(LS_ADMIN, ADMIN_HASH); isAdmin = true; openAdmin(); }
+  else alert('Невірний пароль!');
+};
+window.logoutDevice = function () {
+  if (!confirm('Вийти з адмінки на цьому пристрої? Наступного разу знадобиться пароль.')) return;
+  ls.del(LS_ADMIN); isAdmin = false; window.closeAdmin(); toast('Ви вийшли з адмінки');
+};
+function lockBody() {
+  const open = !$('adminPanel').classList.contains('translate-x-full') || !$('cartDrawer').classList.contains('translate-x-full');
+  document.body.classList.toggle('lock', open);
+}
+function openAdmin() {
+  $('adminPanel').classList.remove('translate-x-full'); $('adminOverlay').classList.remove('hidden'); lockBody();
+  fillAdminForms(); renderAdminCategories(); renderAdminFilterGroups();
+  window.renderAdminProducts(true); renderHistory(); renderStorage(); window.setImportTab(importTab);
+  if (statsLoaded && !statsExists) window.recountStorage();
+}
+window.closeAdmin = function () {
+  $('adminPanel').classList.add('translate-x-full'); $('adminOverlay').classList.add('hidden'); lockBody();
+  if (arc?.running) toast('Імпорт архіву продовжується — не закривайте вкладку', 4000);
+};
+function fillAdminForms() {
+  $('setStoreName').value = settings.storeName || '';
+  $('setTelegram').value = settings.telegram || '';
+  $('setAllowNew').checked = settings.allowNewCategories !== false;
+  $('setGeminiKey').value = ls.get(LS_KEY);
+  $('setGeminiModel').value = ls.get(LS_MODEL) || DEFAULT_MODEL;
+  const b = settings.banner;
+  $('bnEnabled').checked = b.enabled !== false; $('bnTag').value = b.tag || ''; $('bnTitle').value = b.title || ''; $('bnSub').value = b.subtitle || '';
+  renderBannerPreview(); renderKeyWarn();
+}
+function renderKeyWarn() {
+  $('noKeyWarn').innerHTML = ls.get(LS_KEY) ? '' : '<div class="warn">🔑 Щоб Gemini працював, вставте API-ключ у розділі «⚙️ Налаштування» нижче.</div>';
+}
+
+/* ---------- Gemini ---------- */
+async function callGemini(parts, tries = 5) {
+  const key = ls.get(LS_KEY); if (!key) throw new Error('NO_KEY');
+  const model = ls.get(LS_MODEL) || DEFAULT_MODEL;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
+  for (let a = 1; a <= tries; a++) {
+    let r;
+    try {
+      r = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } })
+      });
+    } catch (e) { if (a < tries) { await sleep(3000 * a); continue; } throw new Error('Немає інтернету або Gemini недоступний'); }
+    if (r.ok) {
+      const d = await r.json();
+      const txt = (d.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
+      try { const j = JSON.parse(txt.replace(/```json|```/g, '').trim()); return Array.isArray(j) && !j[0]?.length ? j[0] : j; }
+      catch (e) { if (a < tries) continue; throw new Error('Gemini повернув незрозумілу відповідь'); }
+    }
+    const body = await r.text();
+    if ((r.status === 429 || r.status >= 500) && a < tries) { await sleep(5000 * 2 ** (a - 1)); continue; }
+    if (/API key|API_KEY/i.test(body)) throw new Error('Невірний API-ключ Gemini');
+    if (r.status === 404) throw new Error(`Модель «${model}» не знайдена — змініть назву моделі в налаштуваннях`);
+    if (r.status === 429) throw new Error('Gemini: перевищено ліміт запитів, спробуйте пізніше');
+    throw new Error(`Gemini помилка ${r.status}`);
+  }
+}
+function buildPrompt(text) {
+  const groups = settings.filterGroups.map(g => ({ name: g.name, values: g.values }));
+  return `Ти — контент-менеджер інтернет-магазину одягу «${settings.storeName}». Проаналізуй фото товару${text ? ` і текст поста з Telegram: """${text}"""` : ''}.
+Поверни ТІЛЬКИ JSON українською мовою:
+{"title":"коротка продаюча назва до 60 символів","desc":"опис 2-4 речення: що це, фасон, з чим носити","category":"одна категорія","newCategory":false,"color":"основний колір","material":"матеріал або порожній рядок, якщо не зрозуміло","price":null,"filters":{"Назва групи":["значення"]}}
+Правила:
+- Якщо на фото комплект (наприклад, куртка + спідниця) — назви його комплектом.
+- Не вигадуй бренд, якщо його не видно чітко.
+- Ціну (price) бери лише з тексту поста, інакше null.
+- Існуючі категорії: ${JSON.stringify(settings.categories)}. Обирай з них; нову пропонуй (newCategory=true) лише якщо жодна не підходить.
+- Групи фільтрів і допустимі значення: ${JSON.stringify(groups)}. Використовуй тільки ці значення; якщо не впевнений — не додавай.`;
+}
+async function analyzeProduct(blobs, text) {
+  const parts = [{ text: buildPrompt(text) }];
+  for (const b of blobs.slice(0, MAX_PHOTOS)) parts.push({ inline_data: { mime_type: 'image/jpeg', data: await blobToBase64(b) } });
+  return await callGemini(parts);
+}
+/* Ціна з тексту: «2250+вага» → 2250 і примітка «+ вага» */
+function parsePrice(text) {
+  const m = String(text || '').match(/(\d[\d \u00a0]{0,7}\d|\d)\s*(?:грн|uah|₴)?\s*(\+[^\n]{0,40})?/i);
+  if (!m) return { price: null, note: '' };
+  return { price: parseInt(m[1].replace(/[ \u00a0]/g, ''), 10), note: m[2] ? '+ ' + m[2].slice(1).trim() : '' };
+}
+function aiToDraft(ai, text) {
+  ai = ai || {};
+  const local = parsePrice(text);
+  const filters = {};
+  settings.filterGroups.forEach(g => {
+    const raw = ai.filters?.[g.name]; if (!raw) return;
+    const arr = (Array.isArray(raw) ? raw : [raw]).map(v => g.values.find(x => x.toLowerCase() === String(v).toLowerCase())).filter(Boolean);
+    if (arr.length) filters[g.name] = [...new Set(arr)];
+  });
+  const rawCat = String(ai.category || '').trim();
+  const cat = settings.categories.find(c => c.toLowerCase() === rawCat.toLowerCase()) || rawCat || settings.categories[0] || '';
+  return {
+    title: String(ai.title || 'Новий товар').slice(0, 90), desc: String(ai.desc || ''), category: cat,
+    color: String(ai.color || ''), material: String(ai.material || ''),
+    price: local.price ?? (Number(ai.price) || 0), priceNote: local.note, filters, source: text || ''
+  };
+}
+function resolveCategoryAuto(c) {
+  const f = settings.categories.find(x => x.toLowerCase() === (c || '').toLowerCase());
+  if (f) return f;
+  return settings.allowNewCategories !== false && c ? c : (settings.categories[0] || c || '');
+}
+async function ensureCategory(c) {
+  if (c && !settings.categories.includes(c)) { settings.categories.push(c); await saveSettings(); }
+}
+window.saveGemini = function () {
+  ls.set(LS_KEY, $('setGeminiKey').value.trim());
+  ls.set(LS_MODEL, $('setGeminiModel').value.trim() || DEFAULT_MODEL);
+  renderKeyWarn(); toast('🔑 Ключ збережено на цьому пристрої');
+};
+window.testGemini = async function () {
+  window.saveGemini(); $('geminiTest').textContent = '⏳ Перевіряю…';
+  try { await callGemini([{ text: 'Поверни JSON {"ok":true}' }], 1); $('geminiTest').textContent = '✅ Ключ працює!'; }
+  catch (e) { $('geminiTest').textContent = '❌ ' + errMsg(e); }
+};
+
+/* ---------- Імпорт: вкладки ---------- */
+const TAB_HINTS = {
+  step: 'Фото + текст → Gemini заповнить картку → ви перевіряєте й виправляєте → додаєте в магазин.',
+  auto: 'Фото + текст → одна кнопка → товар одразу з’являється в магазині. Виправити можна потім у «Товарах».',
+  archive: 'Архів експорту Telegram або багато фото → система сама розбирає їх на товари → ви перевіряєте список.'
+};
+window.setImportTab = function (tab) {
+  importTab = tab;
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  $('importTabHint').textContent = TAB_HINTS[tab];
+  $('postForm').classList.toggle('hidden', tab === 'archive');
+  $('archiveForm').classList.toggle('hidden', tab !== 'archive');
+  $('stepActions').innerHTML = tab === 'auto'
+    ? `<button onclick="window.runAuto()" class="btn-main w-full">⚡ Додати автоматично</button>`
+    : `<button onclick="window.runStepAnalyze()" class="btn-main w-full">🤖 Аналізувати через Gemini</button>
+       <button onclick="window.runStepManual()" class="btn-sec w-full">✍️ Заповнити вручну (без Gemini)</button>`;
+  if (tab === 'auto') { draft = null; renderDraft(); }
+};
+function setStepStatus(h) { $('stepStatus').innerHTML = h; }
+window.onStepPhotos = function (inp) {
+  const files = [...inp.files];
+  stepFiles = [...stepFiles, ...files];
+  if (stepFiles.length > MAX_PHOTOS) { toast(`Максимум ${MAX_PHOTOS} фото — зайві відкинуто`); stepFiles = stepFiles.slice(0, MAX_PHOTOS); }
+  inp.value = ''; renderStepThumbs(); if (draft) renderDraft();
+};
+window.onStepVideo = async function (inp) {
+  const f = inp.files[0]; inp.value = ''; if (!f) return;
+  try { await checkVideo(f); stepVideo = f; renderStepThumbs(); } catch (e) { alert(errMsg(e)); }
+};
+window.removeStepPhoto = function (i) { stepFiles.splice(i, 1); renderStepThumbs(); if (draft) renderDraft(); };
+window.removeStepVideo = function () { stepVideo = null; renderStepThumbs(); };
+function renderStepThumbs() {
+  stepUrls.forEach(u => URL.revokeObjectURL(u));
+  stepUrls = stepFiles.map(f => URL.createObjectURL(f));
+  $('stepThumbs').innerHTML = stepUrls.map((u, i) => `<div class="relative w-16 h-16"><img src="${u}" class="w-16 h-16 object-cover rounded-lg"><span class="remove-x" onclick="window.removeStepPhoto(${i})">×</span></div>`).join('')
+    + (stepVideo ? `<div class="relative w-16 h-16 rounded-lg bg-neutral-800 text-white flex items-center justify-center">🎥<span class="remove-x" onclick="window.removeStepVideo()">×</span></div>` : '');
+}
+window.resetStep = function () {
+  stepFiles = []; stepVideo = null; draft = null; $('stepText').value = '';
+  renderStepThumbs(); renderDraft();
+};
+async function smallCopies(files) { const out = []; for (const f of files) out.push(await compressImage(f, 768, 0.7)); return out; }
+
+/* Варіант 1: покроково */
+window.runStepAnalyze = async function () {
+  if (busy) return;
+  if (!stepFiles.length) return alert('Додайте хоча б одне фото');
+  if (!ls.get(LS_KEY)) return alert('Спочатку вставте API-ключ Gemini у розділі «⚙️ Налаштування»');
+  busy = true; setStepStatus('⏳ Gemini аналізує фото… (10–30 секунд)');
+  try {
+    const text = $('stepText').value;
+    draft = aiToDraft(await analyzeProduct(await smallCopies(stepFiles), text), text);
+    setStepStatus('✅ Готово! Перевірте й виправте поля нижче.');
+    renderDraft();
+    $('stepPreview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (e) { setStepStatus('❌ ' + esc(errMsg(e))); }
+  finally { busy = false; }
+};
+window.runStepManual = function () {
+  const t = $('stepText').value, l = parsePrice(t);
+  draft = { title: '', desc: '', category: settings.categories[0] || '', color: '', material: '', price: l.price || 0, priceNote: l.note, filters: {}, source: t };
+  renderDraft();
+};
+function chipsHtml(filters, handler) {
+  return settings.filterGroups.map((g, gi) => {
+    const act = filters?.[g.name] || [];
+    const chips = g.values.map((v, vi) => `<button type="button" onclick="${handler(gi, vi)}" class="size-chip ${act.includes(v) ? 'active' : ''}">${esc(v)}</button>`).join('');
+    return `<div><label class="lbl">${esc(g.name)}</label><div class="flex flex-wrap gap-1.5">${chips || '<span class="text-[10px] text-neutral-400">Немає значень — додайте в «Параметри фільтрів»</span>'}</div></div>`;
+  }).join('');
+}
+function toggleIn(filters, gi, vi) {
+  const g = settings.filterGroups[gi]; if (!g) return filters;
+  const v = g.values[vi]; const cur = filters[g.name] || [];
+  filters[g.name] = cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v];
+  if (!filters[g.name].length) delete filters[g.name];
+  return filters;
+}
+function renderDraft() {
+  if (!draft) { $('stepPreview').innerHTML = ''; return; }
+  const d = draft;
+  const isNew = d.category && !settings.categories.includes(d.category);
+  const opts = settings.categories.map(c => `<option ${c === d.category ? 'selected' : ''}>${esc(c)}</option>`).join('')
+    + (isNew ? `<option selected value="${esc(d.category)}">🆕 ${esc(d.category)} (нова)</option>` : '')
+    + `<option value="__new__">➕ Інша нова категорія…</option>`;
+  $('stepPreview').innerHTML = `
+  <div class="bg-white border-2 border-brand-700 rounded-xl p-3 space-y-2">
+    <div class="font-bold text-sm">👀 Попередній перегляд картки</div>
+    <div class="flex gap-1.5 overflow-x-auto">${stepUrls.map(u => `<img src="${u}" class="w-20 h-20 object-cover rounded-lg shrink-0">`).join('')}</div>
+    <div><label class="lbl">Назва</label><input class="inp" value="${esc(d.title)}" oninput="window.draftSet('title',this.value)"></div>
+    <div class="grid grid-cols-2 gap-2">
+      <div><label class="lbl">Ціна, грн</label><input type="number" inputmode="numeric" class="inp" value="${d.price}" oninput="window.draftSet('price',this.value)"></div>
+      <div><label class="lbl">Примітка до ціни</label><input class="inp" value="${esc(d.priceNote)}" placeholder="+ вага" oninput="window.draftSet('priceNote',this.value)"></div>
+    </div>
+    <div><label class="lbl">Категорія ${isNew ? '<span class="badge bg-amber-100 text-amber-800">Gemini пропонує нову</span>' : ''}</label>
+      <select class="inp" onchange="window.draftCategory(this.value)">${opts}</select></div>
+    <div class="grid grid-cols-2 gap-2">
+      <div><label class="lbl">Колір</label><input class="inp" value="${esc(d.color)}" oninput="window.draftSet('color',this.value)"></div>
+      <div><label class="lbl">Матеріал</label><input class="inp" value="${esc(d.material)}" oninput="window.draftSet('material',this.value)"></div>
+    </div>
+    ${chipsHtml(d.filters, (gi, vi) => `window.draftToggleFilter(${gi},${vi})`)}
+    <div><label class="lbl">Опис</label><textarea rows="4" class="inp" oninput="window.draftSet('desc',this.value)">${esc(d.desc)}</textarea></div>
+    <button onclick="window.commitDraft('published')" class="btn-main w-full">✅ Додати в магазин</button>
+    <button onclick="window.commitDraft('draft')" class="btn-sec w-full">💾 Зберегти як чернетку</button>
+    <button onclick="window.resetStep();setStepStatus('')" class="btn-sec w-full">Скасувати</button>
+  </div>`;
+}
+window.setStepStatus = setStepStatus;
+window.draftSet = (k, v) => { if (draft) draft[k] = k === 'price' ? (Number(v) || 0) : v; };
+window.draftToggleFilter = (gi, vi) => { if (!draft) return; toggleIn(draft.filters, gi, vi); renderDraft(); };
+window.draftCategory = v => {
+  if (v === '__new__') { const n = prompt('Назва нової категорії:'); if (n && n.trim()) draft.category = n.trim(); }
+  else draft.category = v;
+  renderDraft();
+};
+async function createProductFromFiles(data, files, video, status, modeLabel) {
+  const imgs = []; for (const f of files.slice(0, MAX_PHOTOS)) imgs.push(await compressImage(f, 1200, 0.8));
+  assertSpace(imgs.reduce((s, b) => s + b.size, 0) + (video?.size || 0));
+  await ensureCategory(data.category);
+  const impId = 'imp' + Date.now();
+  const p = { ...normalizeProduct({}), ...data, _id: newId(), images: [], video: null, status, createdAt: Date.now(), importId: impId };
+  p.id = p._id;
+  try {
+    for (const b of imgs) p.images.push(await uploadBlob(b, 'products', 'jpg', 'image/jpeg'));
+    if (video) p.video = await uploadVideoFile(video, video.name);
+    await saveProduct(p);
+  } catch (e) { for (const m of [...p.images, p.video]) await deleteMedia(m); throw e; }
+  await setDoc(doc(importsCol, impId), { mode: modeLabel, createdAt: Date.now(), count: 1, productIds: [p._id], note: (data.source || data.title || '').slice(0, 80) }).catch(onDbError);
+  return p;
+}
+window.commitDraft = async function (status) {
+  if (busy || !draft) return;
+  if (!stepFiles.length && !confirm('Товар без фото. Зберегти все одно?')) return;
+  busy = true; setStepStatus('⏳ Завантажую фото в хмару…');
+  try {
+    await createProductFromFiles({ ...draft }, stepFiles, stepVideo, status, 'Покроково');
+    window.resetStep();
+    setStepStatus(status === 'published' ? '✅ Товар додано в магазин. Можна завантажувати наступний.' : '💾 Збережено як чернетку (розділ «Товари» → «Чернетки»).');
+  } catch (e) { setStepStatus('❌ ' + esc(errMsg(e))); }
+  finally { busy = false; }
+};
+
+/* Варіант 2: автоматично */
+window.runAuto = async function () {
+  if (busy) return;
+  if (!stepFiles.length) return alert('Додайте хоча б одне фото');
+  if (!ls.get(LS_KEY)) return alert('Спочатку вставте API-ключ Gemini у розділі «⚙️ Налаштування»');
+  busy = true;
+  try {
+    const text = $('stepText').value;
+    setStepStatus('⏳ 1/2 Gemini аналізує фото…');
+    const d = aiToDraft(await analyzeProduct(await smallCopies(stepFiles), text), text);
+    d.category = resolveCategoryAuto(d.category);
+    setStepStatus('⏳ 2/2 Завантажую в хмару…');
+    const p = await createProductFromFiles(d, stepFiles, stepVideo, 'published', 'Автоматично');
+    window.resetStep();
+    setStepStatus(`✅ Додано: «${esc(p.title)}» — ${p.price} грн. Можна завантажувати наступний.`);
+  } catch (e) { setStepStatus('❌ ' + esc(errMsg(e))); }
+  finally { busy = false; }
+};
+
+/* ---------- Варіант 3: архів ---------- */
+const IMG_RE = /\.(jpe?g|png|webp|heic|heif)$/i, VID_RE = /\.(mp4|mov|m4v|webm)$/i;
+const extType = n => ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/mp4', webm: 'video/webm' })[n.split('.').pop().toLowerCase()] || 'application/octet-stream';
+function loadScript(src) {
+  return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Не вдалося завантажити бібліотеку ZIP')); document.head.appendChild(s); });
+}
+function setArc(h) { $('archiveStatus').innerHTML = h; }
+window.onArchivePick = async function (inp, kind) {
+  const files = [...inp.files]; inp.value = '';
+  if (!files.length) return;
+  if (arc?.running) return alert('Спочатку зупиніть поточний імпорт');
+  arcThumbs.forEach(u => URL.revokeObjectURL(u)); arcThumbs.clear();
+  arc = null; renderArcGroups(); renderArcProgress();
+  setArc('⏳ Читаю файли…');
+  try {
+    let entries = [];
+    if (kind === 'zip') {
+      const zf = files[0];
+      if (zf.size > 700 * 1048576) toast('Великий архів — телефону може не вистачити пам’яті. Краще розділити архів або взяти комп’ютер.', 7000);
+      if (!window.JSZip) await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+      const zip = await window.JSZip.loadAsync(zf);
+      zip.forEach((path, entry) => {
+        if (entry.dir || path.includes('__MACOSX')) return;
+        entries.push({ path, name: path.split('/').pop(), date: entry.date ? entry.date.getTime() : 0, get: async () => new Blob([await entry.async('arraybuffer')], { type: extType(path) }) });
+      });
+    } else {
+      entries = files.map(f => ({ path: f.webkitRelativePath || f.name, name: f.name, date: f.lastModified || 0, get: async () => f }));
+    }
+    entries.forEach(e => e.kind = /_thumb\.(jpe?g|png)$/i.test(e.name) ? 'other' : IMG_RE.test(e.name) ? 'image' : VID_RE.test(e.name) ? 'video' : /^result\.json$/i.test(e.name) ? 'json' : 'other');
+    entries = entries.filter(e => e.kind !== 'other' && !e.name.startsWith('.'));
+    const imgCount = entries.filter(e => e.kind === 'image').length;
+    if (!imgCount) return setArc('❌ Не знайдено жодного фото');
+    setArc(`⏳ Знайдено ${imgCount} фото. Розбираю на товари…`);
+    const { groups, method } = await buildGroups(entries);
+    const good = groups.filter(g => g.files.some(f => f.kind === 'image'));
+    arc = { name: files.length === 1 ? files[0].name : `${files.length} файлів`, groups: good, method, pos: 0, done: 0, failed: 0, skipped: 0, running: false, paused: false, stop: false, importId: null, log: [], shown: 20, current: '' };
+    const known = new Set(products.map(p => p.sourceKey).filter(Boolean));
+    const already = good.filter(g => known.has(g.key)).length;
+    setArc(`✅ Фото: ${imgCount} → товарів: <b>${good.length}</b>${already ? ` (з них ${already} вже імпортовано — їх буде пропущено)` : ''}<br><span class="text-neutral-500">Як згруповано: ${esc(method)}</span>`);
+    renderArcProgress(); renderArcGroups();
+  } catch (e) { console.error(e); setArc('❌ ' + esc(errMsg(e))); }
+};
+const tsFromName = n => { const m = n.match(/@(\d{2})-(\d{2})-(\d{4})_(\d{2})-(\d{2})-(\d{2})/); return m ? Date.UTC(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]) / 1000 : null; };
+const flatText = t => Array.isArray(t) ? t.map(x => typeof x === 'string' ? x : (x?.text || '')).join('') : String(t || '');
+async function buildGroups(entries) {
+  const media = entries.filter(e => e.kind === 'image' || e.kind === 'video');
+  const json = entries.find(e => e.kind === 'json');
+  if (json) {
+    try {
+      const g = groupsFromTelegram(JSON.parse(await (await json.get()).text()), media);
+      if (g.length) return { groups: g, method: 'файл result.json з Telegram (найточніше, з текстом і цінами)' };
+    } catch (e) { console.warn('result.json', e); }
+  }
+  const ts = media.map(e => ({ e, t: tsFromName(e.name) }));
+  if (ts.filter(x => x.t).length >= media.length * 0.8) {
+    ts.sort((a, b) => (a.t || 0) - (b.t || 0) || a.e.name.localeCompare(b.e.name, undefined, { numeric: true }));
+    return { groups: groupByGap(ts, 2), method: 'за часом публікації в назвах файлів' };
+  }
+  const sorted = [...media].sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
+  if ($('arcAiGroup').checked && ls.get(LS_KEY)) return { groups: await groupWithGemini(sorted), method: 'Gemini — за схожістю фото' };
+  const distinct = new Set(sorted.map(e => Math.round(e.date / 1000))).size;
+  if (distinct < sorted.length / 3) return { groups: sorted.map(e => ({ files: [e], text: '', key: 'f:' + e.name })), method: 'кожне фото — окремий товар (об’єднайте вручну)' };
+  return { groups: groupByGap(sorted.map(e => ({ e, t: Math.round(e.date / 1000) })), 3), method: 'за часом створення файлів' };
+}
+function groupByGap(list, gap) {
+  const groups = []; let cur = null;
+  for (const { e, t } of list) {
+    const imgs = cur ? cur.files.filter(f => f.kind === 'image').length : 0;
+    if (!cur || Math.abs((t || 0) - cur.t) > gap || (e.kind === 'image' && imgs >= 10)) { cur = { t: t || 0, files: [], text: '', key: 'f:' + e.name }; groups.push(cur); }
+    cur.files.push(e); cur.t = t || 0;
+  }
+  return groups.map(({ files, text, key }) => ({ files, text, key }));
+}
+function groupsFromTelegram(data, media) {
+  const k2 = p => String(p).replace(/\\/g, '/').split('/').slice(-2).join('/').toLowerCase();
+  const map = new Map(media.map(e => [k2(e.path), e]));
+  const byName = new Map(media.map(e => [e.name.toLowerCase(), e]));
+  const find = p => map.get(k2(p)) || byName.get(String(p).split('/').pop().toLowerCase());
+  const groups = []; let cur = null;
+  for (const m of (data.messages || [])) {
+    if (m.type !== 'message') continue;
+    const t = Number(m.date_unixtime) || Math.round(Date.parse(m.date) / 1000) || 0;
+    const paths = [];
+    if (m.photo) paths.push(m.photo);
+    if (m.file && /video/i.test(String(m.mime_type || m.media_type || ''))) paths.push(m.file);
+    const found = paths.map(find).filter(Boolean);
+    const text = flatText(m.text).trim();
+    if (!found.length) { if (text && cur && !cur.text && t - cur.t <= 120) cur.text = text; continue; }
+    const imgsInCur = cur ? cur.files.filter(f => f.kind === 'image').length : 0;
+    if (!cur || Math.abs(t - cur.t) > 1 || imgsInCur >= 10) { cur = { t, files: [], text: '', key: 'tg:' + m.id }; groups.push(cur); }
+    cur.files.push(...found);
+    if (text) cur.text = cur.text ? cur.text + '\n' + text : text;
+  }
+  return groups.map(({ files, text, key }) => ({ files, text, key }));
+}
+function validGroups(g, n) {
+  if (!Array.isArray(g)) return null;
+  const seen = new Set();
+  for (const grp of g) { if (!Array.isArray(grp) || !grp.length) return null; for (const i of grp) { if (!Number.isInteger(i) || i < 0 || i >= n || seen.has(i)) return null; seen.add(i); } }
+  return seen.size === n ? g.map(x => [...x].sort((a, b) => a - b)).sort((a, b) => a[0] - b[0]) : null;
+}
+async function groupWithGemini(sorted) {
+  const imgs = sorted.filter(e => e.kind === 'image'), vids = sorted.filter(e => e.kind === 'video');
+  const groups = [], B = 16;
+  for (let i = 0; i < imgs.length; i += B) {
+    const batch = imgs.slice(i, i + B);
+    setArc(`⏳ Gemini групує фото: ${Math.min(i + B, imgs.length)} з ${imgs.length}…`);
+    let res = null;
+    try {
+      const parts = [{ text: `Перед тобою ${batch.length} фото з магазину одягу, пронумеровані від 0 до ${batch.length - 1} у порядку. Об'єднай у групи фото, на яких ОДИН І ТОЙ САМИЙ товар (той самий виріб або комплект, з різних ракурсів чи на різних моделях). Групи складаються з сусідніх номерів. Кожен номер — рівно в одній групі. Відповідь лише JSON: {"groups":[[0,1],[2],[3,4,5]]}` }];
+      for (const e of batch) parts.push({ inline_data: { mime_type: 'image/jpeg', data: await blobToBase64(await compressImage(await e.get(), 384, 0.6)) } });
+      res = await callGemini(parts);
+    } catch (e) { console.warn(e); if (e.message === 'NO_KEY' || /API-ключ/.test(e.message)) throw e; }
+    (validGroups(res?.groups, batch.length) || batch.map((_, k) => [k]))
+      .forEach(ix => groups.push({ files: ix.map(k => batch[k]), text: '', key: 'f:' + batch[ix[0]].name }));
+  }
+  vids.forEach(v => {
+    let target = null;
+    for (const g of groups) { if (g.files[0].path.localeCompare(v.path, undefined, { numeric: true }) <= 0) target = g; }
+    if (target && !target.files.some(f => f.kind === 'video')) target.files.push(v);
+  });
+  return groups;
+}
+function renderArcGroups() {
+  if (!arc) { $('archiveGroups').innerHTML = ''; return; }
+  const list = arc.groups.slice(0, arc.shown);
+  $('archiveGroups').innerHTML = `<div class="text-xs font-bold mb-1 mt-2">Перевірте групи (можна об’єднати або пропустити):</div>` + list.map((g, i) => {
+    const imgs = g.files.filter(f => f.kind === 'image').length, vids = g.files.filter(f => f.kind === 'video').length;
+    return `<div class="flex gap-2 items-center bg-white border rounded-lg p-2 mb-1.5 ${g.skip ? 'opacity-40' : ''}">
+      <img data-arc="${i}" class="w-14 h-14 object-cover rounded bg-neutral-200 shrink-0" alt="">
+      <div class="flex-1 min-w-0 text-[11px]"><b>#${i + 1}</b> · 📷 ${imgs}${vids ? ` · 🎥 ${vids}` : ''}${imgs > MAX_PHOTOS ? ` <span class="text-amber-700">(візьму перші ${MAX_PHOTOS})</span>` : ''}
+        <input class="inp mt-1" style="padding:4px 8px" value="${esc(g.text)}" placeholder="Текст / ціна" onchange="window.arcText(${i},this.value)"></div>
+      <div class="flex flex-col gap-1 shrink-0">
+        ${i > 0 ? `<button onclick="window.arcMerge(${i})" class="btn-sec sm">⤴ Об’єднати</button>` : ''}
+        <button onclick="window.arcSkip(${i})" class="btn-sec sm">${g.skip ? '↩ Повернути' : '✕ Пропустити'}</button>
+      </div></div>`;
+  }).join('') + (arc.groups.length > arc.shown ? `<button onclick="window.arcMore()" class="btn-sec w-full">Показати ще (${arc.groups.length - arc.shown})</button>` : '');
+  loadArcThumbs();
+}
+async function loadArcThumbs() {
+  for (const el of document.querySelectorAll('img[data-arc]')) {
+    const g = arc?.groups[+el.dataset.arc]; if (!g) continue;
+    const f = g.files.find(x => x.kind === 'image'); if (!f) continue;
+    if (!arcThumbs.has(f)) { try { arcThumbs.set(f, URL.createObjectURL(await f.get())); } catch (e) { continue; } }
+    el.src = arcThumbs.get(f);
+  }
+}
+window.arcText = (i, v) => { if (arc) arc.groups[i].text = v; };
+window.arcMore = () => { arc.shown += 20; renderArcGroups(); };
+window.arcSkip = i => { if (arc.running) return toast('Спочатку поставте на паузу'); arc.groups[i].skip = !arc.groups[i].skip; renderArcGroups(); renderArcProgress(); };
+window.arcMerge = i => {
+  if (arc.running) return toast('Спочатку поставте на паузу');
+  if (i <= arc.pos && arc.pos > 0) return toast('Ці товари вже оброблено');
+  const a = arc.groups[i - 1], b = arc.groups[i];
+  a.files.push(...b.files); a.text = [a.text, b.text].filter(Boolean).join('\n');
+  arc.groups.splice(i, 1); renderArcGroups(); renderArcProgress();
+};
+function renderArcProgress() {
+  if (!arc) { $('archiveProgress').innerHTML = ''; return; }
+  const total = arc.groups.filter(g => !g.skip).length;
+  const processed = arc.done + arc.failed + arc.skipped;
+  const pct = total ? Math.min(100, Math.round(processed / total * 100)) : 0;
+  const finished = arc.pos >= arc.groups.length;
+  $('archiveProgress').innerHTML = `
+  <div class="bg-white border rounded-xl p-3 space-y-2">
+    <div class="flex justify-between text-xs"><b>Оброблено: ${processed} з ${total}</b><span>${pct}%</span></div>
+    <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="text-[11px] text-neutral-600">✅ Додано: ${arc.done} · ⏭ Вже були: ${arc.skipped} · ❌ Помилки: ${arc.failed}</div>
+    ${arc.current ? `<div class="text-[11px] text-neutral-500 truncate">${esc(arc.current)}</div>` : ''}
+    <div class="flex gap-2">${finished ? '<div class="text-xs font-bold text-emerald-700">🎉 Готово! Перевірте товари в розділі «Товари».</div>'
+      : !arc.running ? `<button onclick="window.arcStart()" class="btn-main flex-1">▶️ ${arc.pos > 0 ? 'Продовжити' : 'Почати обробку'}</button>`
+      : `<button onclick="window.arcPause()" class="btn-sec flex-1">${arc.paused ? '▶️ Продовжити' : '⏸ Пауза'}</button><button onclick="window.arcStop()" class="btn-del flex-1">⏹ Стоп</button>`}</div>
+    ${arc.running ? '<div class="text-[10px] text-neutral-500">Не закривайте вкладку і не блокуйте телефон до завершення.</div>' : ''}
+    ${arc.log.length ? `<details class="text-[11px]"><summary class="cursor-pointer text-rose-600">Журнал помилок (${arc.log.length})</summary><div class="mt-1 space-y-0.5 max-h-40 overflow-y-auto">${arc.log.map(l => `<div>${esc(l)}</div>`).join('')}</div></details>` : ''}
+  </div>`;
+}
+window.arcPause = () => { arc.paused = !arc.paused; renderArcProgress(); };
+window.arcStop = () => { arc.stop = true; arc.paused = false; renderArcProgress(); };
+window.arcStart = async function () {
+  if (!arc || arc.running) return;
+  if (!ls.get(LS_KEY)) return alert('Спочатку вставте API-ключ Gemini у розділі «⚙️ Налаштування»');
+  arc.running = true; arc.stop = false; arc.paused = false; renderArcProgress();
+  const publish = $('arcPublish').checked;
+  let wake = null; try { wake = await navigator.wakeLock?.request('screen'); } catch (e) {}
+  try {
+    if (!arc.importId) {
+      arc.importId = 'imp' + Date.now();
+      await setDoc(doc(importsCol, arc.importId), { mode: 'Архів', createdAt: Date.now(), count: 0, productIds: [], note: arc.name + ' · ' + arc.method });
+    }
+    const known = new Set(products.map(p => p.sourceKey).filter(Boolean));
+    for (; arc.pos < arc.groups.length; arc.pos++) {
+      while (arc.paused && !arc.stop) await sleep(400);
+      if (arc.stop) break;
+      const g = arc.groups[arc.pos];
+      if (g.skip) continue;
+      if (known.has(g.key)) { arc.skipped++; renderArcProgress(); continue; }
+      arc.current = `Обробляю товар #${arc.pos + 1}…`; renderArcProgress();
+      try {
+        const p = await processGroup(g, publish);
+        known.add(g.key); arc.done++; arc.current = `Останній: «${p.title}»`;
+      } catch (e) {
+        if (e.message === 'LIMIT') { arc.log.push('⛔ Зупинено: досягнуто ліміт 1 ГБ'); break; }
+        if (e.message === 'NO_KEY' || /API-ключ/.test(e.message)) { arc.log.push('⛔ ' + errMsg(e)); break; }
+        arc.failed++; arc.log.push(`#${arc.pos + 1}: ${errMsg(e)}`);
+      }
+      renderArcProgress();
+      await sleep(400);
+    }
+  } catch (e) { onDbError(e); arc.log.push(errMsg(e)); }
+  finally {
+    arc.running = false; arc.current = '';
+    try { await wake?.release(); } catch (e) {}
+    renderArcProgress(); renderArcGroups();
+  }
+  if (arc.pos >= arc.groups.length) toast(`Готово! Додано ${arc.done} товарів${publish ? '' : ' як чернетки — перевірте їх у «Товарах»'}`, 7000);
+};
+async function processGroup(g, publish) {
+  const imgE = g.files.filter(f => f.kind === 'image').slice(0, MAX_PHOTOS);
+  const vidE = g.files.find(f => f.kind === 'video');
+  if (!imgE.length) throw new Error('немає фото');
+  const big = []; for (const e of imgE) big.push(await compressImage(await e.get(), 1200, 0.8));
+  let vid = null;
+  if (vidE) { const b = await vidE.get(); if (b.size <= 50 * 1048576) vid = { blob: b, name: vidE.name }; else arc.log.push(`#${arc.pos + 1}: відео більше 50 МБ — пропущено`); }
+  assertSpace(big.reduce((s, b) => s + b.size, 0) + (vid?.blob.size || 0));
+  const small = []; for (const b of big) small.push(await compressImage(b, 768, 0.7));
+  const d = aiToDraft(await analyzeProduct(small, g.text), g.text);
+  d.category = resolveCategoryAuto(d.category);
+  await ensureCategory(d.category);
+  const p = { ...normalizeProduct({}), ...d, _id: newId(), images: [], video: null, status: publish ? 'published' : 'draft', createdAt: Date.now(), importId: arc.importId, sourceKey: g.key };
+  p.id = p._id;
+  try {
+    for (const b of big) p.images.push(await uploadBlob(b, 'products', 'jpg', 'image/jpeg'));
+    if (vid) p.video = await uploadBlob(vid.blob, 'products', (vid.name.split('.').pop() || 'mp4').toLowerCase(), vid.blob.type || 'video/mp4');
+    await saveProduct(p);
+  } catch (e) { for (const m of [...p.images, p.video]) await deleteMedia(m); throw e; }
+  await updateDoc(doc(importsCol, arc.importId), { productIds: arrayUnion(p._id), count: increment(1) }).catch(onDbError);
+  return p;
+}
+window.addEventListener('beforeunload', e => { if (arc?.running || busy) { e.preventDefault(); e.returnValue = ''; } });
+
+/* ---------- Адмінка: товари ---------- */
+function admFiltered() {
+  const q = ($('admSearch')?.value || '').toLowerCase().trim();
+  return products.filter(p => (admStatus === 'all' || p.status === admStatus) && (!admImport || p.importId === admImport)
+    && (!q || `${p.title} ${p.desc} ${p.category}`.toLowerCase().includes(q)));
+}
+window.renderAdminProducts = function (resetPage) {
+  if (!isAdmin) return;
+  if (resetPage) admLimit = PAGE;
+  const cnt = s => products.filter(p => s === 'all' || p.status === s).length;
+  $('admStatusTabs').innerHTML = [['all', 'Всі'], ['published', 'В магазині'], ['draft', 'Чернетки'], ['hidden', 'Приховані']]
+    .map(([k, l]) => `<button onclick="window.setAdmStatus('${k}')" class="size-chip whitespace-nowrap ${admStatus === k ? 'active' : ''}">${l} (${cnt(k)})</button>`).join('');
+  $('admCount').textContent = `(${products.length})`;
+  const list = admFiltered();
+  const imp = admImport && imports.find(i => i.id === admImport);
+  const drafts = list.filter(p => p.status === 'draft').length;
+  $('admImportFilter').innerHTML =
+    (admImport ? `<div class="text-xs bg-amber-50 border border-amber-200 rounded-lg p-2 mb-2 flex justify-between items-center">Показано партію від ${imp ? fmtDate(imp.createdAt) : '…'}<button onclick="window.setAdmImport(null)" class="font-bold px-3 py-1">✕</button></div>` : '')
+    + (drafts ? `<button onclick="window.publishShownDrafts()" class="btn-main w-full mb-2">✅ Опублікувати показані чернетки (${drafts})</button>` : '');
+  $('adminProductList').innerHTML = list.slice(0, admLimit).map(adminCard).join('') || '<div class="text-xs text-neutral-400 text-center py-4">Товарів немає</div>';
+  $('admMore').classList.toggle('hidden', list.length <= admLimit);
+  $('admMore').textContent = `Показати ще (${list.length - admLimit})`;
+};
+window.admShowMore = () => { admLimit += PAGE; window.renderAdminProducts(); };
+window.setAdmStatus = s => { admStatus = s; window.renderAdminProducts(true); };
+window.setAdmImport = id => {
+  admImport = id; admStatus = 'all'; $('secProducts').open = true; window.renderAdminProducts(true);
+  if (id) $('secProducts').scrollIntoView({ behavior: 'smooth' });
+};
+function adminCard(p) {
+  const id = p._id; const [sl, sc] = STATUS[p.status] || STATUS.published;
+  const thumb = p.images[0] ? `<img src="${esc(p.images[0].url)}" loading="lazy" class="w-14 h-14 object-cover rounded-lg shrink-0">` : `<div class="w-14 h-14 flex items-center justify-center bg-neutral-200 rounded-lg shrink-0">📦</div>`;
+  if (!expanded.has(id)) return `
+  <div class="product-admin-card flex items-center gap-2">
+    ${thumb}
+    <div class="flex-1 min-w-0">
+      <div class="font-bold text-xs truncate">${esc(p.title || 'Без назви')}</div>
+      <div class="text-neutral-500 text-[11px] truncate">${p.price} грн ${esc(p.priceNote)} · ${esc(p.category || '—')}</div>
+      <span class="badge ${sc}">${sl}</span>
+    </div>
+    <div class="flex flex-col gap-1 shrink-0">
+      <button onclick="window.toggleEdit('${id}')" class="btn-sec sm">✎ Змінити</button>
+      ${p.status === 'published' ? `<button onclick="window.setStatus('${id}','hidden')" class="btn-sec sm">🙈 Сховати</button>` : `<button onclick="window.setStatus('${id}','published')" class="btn-sec sm">✅ Опублікувати</button>`}
+    </div>
+  </div>`;
+  let slots = '';
+  const n = Math.max(MAX_PHOTOS, p.images.length);
+  for (let i = 0; i < n; i++) {
+    const img = p.images[i];
+    slots += `<label class="upload-slot">${img ? `<img src="${esc(img.url)}" loading="lazy"><span class="remove-x" onclick="event.preventDefault();window.removePhoto('${id}',${i})">×</span>` : `+ Фото ${i + 1}`}<input type="file" accept="image/*" onchange="window.uploadPhoto(event,'${id}',${i})"></label>`;
+  }
+  const cats = (settings.categories.includes(p.category) || !p.category ? settings.categories : [p.category, ...settings.categories])
+    .map(c => `<option ${c === p.category ? 'selected' : ''}>${esc(c)}</option>`).join('');
+  return `
+  <div class="product-admin-card space-y-2">
+    <div class="flex justify-between items-center"><span class="badge ${sc}">${sl}</span><button onclick="window.toggleEdit('${id}')" class="btn-sec sm">✓ Готово</button></div>
+    <div class="grid grid-cols-3 gap-1.5">${slots}</div>
+    <label class="upload-slot video-slot">${p.video ? `<video src="${esc(p.video.url)}" muted playsinline preload="metadata"></video><span class="remove-x" onclick="event.preventDefault();window.removeVideo('${id}')">×</span>` : '+ Відео (до 2 хв)'}<input type="file" accept="video/*" onchange="window.uploadVideo(event,'${id}')"></label>
+    <div><label class="lbl">Назва</label><input class="inp" value="${esc(p.title)}" onchange="window.setField('${id}','title',this.value)"></div>
+    <div class="grid grid-cols-2 gap-2">
+      <div><label class="lbl">Ціна, грн</label><input type="number" inputmode="numeric" class="inp" value="${p.price}" onchange="window.setField('${id}','price',this.value)"></div>
+      <div><label class="lbl">Примітка до ціни</label><input class="inp" value="${esc(p.priceNote)}" placeholder="+ вага" onchange="window.setField('${id}','priceNote',this.value)"></div>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <div><label class="lbl">Категорія</label><select class="inp" onchange="window.setField('${id}','category',this.value)">${cats}</select></div>
+      <div><label class="lbl">Статус</label><select class="inp" onchange="window.setStatus('${id}',this.value)">${Object.keys(STATUS).map(s => `<option value="${s}" ${p.status === s ? 'selected' : ''}>${STATUS[s][0]}</option>`).join('')}</select></div>
+    </div>
+    <div class="grid grid-cols-2 gap-2">
+      <div><label class="lbl">Колір</label><input class="inp" value="${esc(p.color)}" onchange="window.setField('${id}','color',this.value)"></div>
+      <div><label class="lbl">Матеріал</label><input class="inp" value="${esc(p.material)}" onchange="window.setField('${id}','material',this.value)"></div>
+    </div>
+    ${chipsHtml(p.filters, (gi, vi) => `window.toggleProdFilter('${id}',${gi},${vi})`)}
+    <div><label class="lbl">Опис</label><textarea rows="4" class="inp" onchange="window.setField('${id}','desc',this.value)">${esc(p.desc)}</textarea></div>
+    ${p.source ? `<div class="text-[10px] text-neutral-400">Текст з Telegram: ${esc(p.source.slice(0, 120))}</div>` : ''}
+    <button onclick="window.deleteProduct('${id}')" class="btn-del w-full">🗑 Видалити товар і його фото з хмари</button>
+  </div>`;
+}
+window.toggleEdit = id => { expanded.has(id) ? expanded.delete(id) : expanded.add(id); window.renderAdminProducts(); };
+window.setField = async (id, f, v) => {
+  try { await patchProduct(id, { [f]: f === 'price' ? (Number(v) || 0) : v }); toast('Збережено ✓', 1200); } catch (e) {}
+};
+window.setStatus = async (id, s) => {
+  try { await patchProduct(id, { status: s }); toast(s === 'published' ? 'Опубліковано ✓' : s === 'hidden' ? 'Приховано з магазину' : 'Переведено в чернетки'); } catch (e) {}
+};
+window.toggleProdFilter = async (id, gi, vi) => {
+  const p = findP(id); if (!p) return;
+  try { await patchProduct(id, { filters: toggleIn(clone(p.filters), gi, vi) }); } catch (e) {}
+};
+window.uploadPhoto = async (ev, id, idx) => {
+  const file = ev.target.files[0]; const slot = ev.target.closest('.upload-slot'); ev.target.value = '';
+  const p = findP(id); if (!file || !p) return;
+  if (slot) slot.style.opacity = '.4';
+  try {
+    const img = await uploadImageFile(file);
+    const imgs = clone(p.images); const old = idx < imgs.length ? imgs[idx] : null;
+    if (idx < imgs.length) imgs[idx] = img; else imgs.push(img);
+    await patchProduct(id, { images: imgs });
+    await deleteMedia(old);
+  } catch (e) { if (e.message !== 'LIMIT') alert('Не вдалося завантажити фото: ' + errMsg(e)); }
+  finally { if (slot) slot.style.opacity = '1'; }
+};
+window.removePhoto = async (id, idx) => {
+  const p = findP(id); if (!p || !p.images[idx]) return;
+  if (!confirm('Видалити це фото з товару і з хмари?')) return;
+  const imgs = clone(p.images); const [old] = imgs.splice(idx, 1);
+  try { await patchProduct(id, { images: imgs }); await deleteMedia(old); toast('Фото видалено'); } catch (e) {}
+};
+window.uploadVideo = async (ev, id) => {
+  const file = ev.target.files[0]; const slot = ev.target.closest('.upload-slot'); ev.target.value = '';
+  const p = findP(id); if (!file || !p) return;
+  if (slot) slot.style.opacity = '.4';
+  try { const old = p.video; const v = await uploadVideoFile(file, file.name); await patchProduct(id, { video: v }); await deleteMedia(old); }
+  catch (e) { if (e.message !== 'LIMIT') alert(errMsg(e)); }
+  finally { if (slot) slot.style.opacity = '1'; }
+};
+window.removeVideo = async id => {
+  const p = findP(id); if (!p?.video || !confirm('Видалити відео з товару і з хмари?')) return;
+  const old = p.video;
+  try { await patchProduct(id, { video: null }); await deleteMedia(old); toast('Відео видалено'); } catch (e) {}
+};
+window.deleteProduct = async id => {
+  const p = findP(id); if (!p) return;
+  if (!confirm(`Видалити «${p.title || 'товар'}» назавжди?\nФото й відео теж буде видалено з хмари.`)) return;
+  try {
+    await deleteDoc(doc(productsCol, id)); expanded.delete(id);
+    for (const m of [...p.images, p.video]) await deleteMedia(m);
+    toast('Товар видалено');
+  } catch (e) { onDbError(e); }
+};
+window.addManualProduct = async () => {
+  const id = newId();
+  const p = { ...normalizeProduct({}), _id: id, id, title: 'Новий товар', category: settings.categories[0] || '', status: 'draft', createdAt: Date.now() };
+  try { await saveProduct(p); expanded.add(id); admStatus = 'all'; admImport = null; if ($('admSearch')) $('admSearch').value = ''; window.renderAdminProducts(true); toast('Створено чернетку — заповніть поля'); } catch (e) {}
+};
+window.publishShownDrafts = async () => {
+  const list = admFiltered().filter(p => p.status === 'draft');
+  if (!list.length || !confirm(`Опублікувати ${list.length} чернеток у магазині?`)) return;
+  try { await batchPatch(list.map(p => [p._id, { status: 'published' }])); toast('Опубліковано ✓'); } catch (e) {}
+};
+
+/* ---------- Історія імпортів ---------- */
+function renderHistory() {
+  if (!isAdmin) return;
+  const box = $('importHistory');
+  if (!imports.length) { box.innerHTML = '<div class="text-xs text-neutral-400">Імпортів ще не було</div>'; return; }
+  box.innerHTML = imports.slice(0, 60).map(imp => {
+    const its = products.filter(p => p.importId === imp.id);
+    const drafts = its.filter(p => p.status === 'draft').length;
+    return `<div class="history-item space-y-1.5">
+      <div class="flex justify-between gap-2"><b>${esc(imp.mode)}</b><span class="text-neutral-500">${fmtDate(imp.createdAt)}</span></div>
+      <div class="text-neutral-600">Товарів зараз: <b>${its.length}</b>${drafts ? ` · чернеток: ${drafts}` : ''}${imp.note ? `<br><span class="text-neutral-400">${esc(imp.note)}</span>` : ''}</div>
+      <div class="flex flex-wrap gap-1.5">
+        ${its.length ? `<button onclick="window.setAdmImport('${imp.id}')" class="btn-sec sm">👁 Показати</button>` : ''}
+        ${drafts ? `<button onclick="window.publishImport('${imp.id}')" class="btn-sec sm">✅ Опублікувати чернетки</button>` : ''}
+        ${its.length ? `<button onclick="window.deleteImport('${imp.id}')" class="btn-del sm">🗑 Видалити партію</button>` : `<button onclick="window.removeImportLog('${imp.id}')" class="btn-sec sm">Прибрати запис</button>`}
+      </div></div>`;
+  }).join('');
+}
+window.publishImport = async id => {
+  const list = products.filter(p => p.importId === id && p.status === 'draft');
+  if (!list.length || !confirm(`Опублікувати ${list.length} чернеток цієї партії?`)) return;
+  try { await batchPatch(list.map(p => [p._id, { status: 'published' }])); toast('Опубліковано ✓'); } catch (e) {}
+};
+window.deleteImport = async id => {
+  const list = products.filter(p => p.importId === id);
+  if (!list.length) return;
+  if (!confirm(`Видалити ВСІ ${list.length} товарів цієї партії разом із фото в хмарі?`)) return;
+  if (!confirm('Точно? Цю дію не можна скасувати.')) return;
+  try {
+    for (let i = 0; i < list.length; i += 400) { const b = writeBatch(db); list.slice(i, i + 400).forEach(p => b.delete(doc(productsCol, p._id))); await b.commit(); }
+    let k = 0;
+    for (const p of list) { for (const m of [...p.images, p.video]) await deleteMedia(m); if (++k % 10 === 0) toast(`Видаляю фото… ${k}/${list.length}`, 1500); }
+    await deleteDoc(doc(importsCol, id));
+    toast(`Партію видалено (${list.length} товарів)`);
+  } catch (e) { onDbError(e); }
+};
+window.removeImportLog = async id => { try { await deleteDoc(doc(importsCol, id)); } catch (e) { onDbError(e); } };
+
+/* ---------- Банер ---------- */
+function renderBannerPreview() {
+  const img = settings.banner.image;
+  $('bnPreview').innerHTML = img ? `<div class="relative"><img src="${esc(img.url)}" class="w-full h-24 object-cover rounded-lg"><span class="remove-x" onclick="window.removeBannerImage()">×</span></div>` : '';
+}
+window.saveBanner = async () => {
+  const b = settings.banner;
+  b.enabled = $('bnEnabled').checked; b.tag = $('bnTag').value.trim(); b.title = $('bnTitle').value.trim(); b.subtitle = $('bnSub').value.trim();
+  const f = $('bnFile').files[0]; let old = null;
+  try {
+    if (f) { old = b.image; b.image = await uploadImageFile(f, 'branding', 1600, 0.82); $('bnFile').value = ''; }
+    await saveSettings(); if (old) await deleteMedia(old);
+    renderBannerPreview(); toast('✅ Банер збережено');
+  } catch (e) { if (e.message !== 'LIMIT') alert(errMsg(e)); }
+};
+window.removeBannerImage = async () => {
+  if (!settings.banner.image || !confirm('Видалити фото банера з хмари?')) return;
+  const old = settings.banner.image; settings.banner.image = null;
+  try { await saveSettings(); await deleteMedia(old); renderBannerPreview(); toast('Фото банера видалено'); } catch (e) {}
+};
+
+/* ---------- Налаштування магазину ---------- */
+window.saveStoreSettings = async () => {
+  settings.storeName = $('setStoreName').value.trim() || settings.storeName;
+  settings.telegram = $('setTelegram').value.trim().replace(/^@/, '') || settings.telegram;
+  settings.allowNewCategories = $('setAllowNew').checked;
+  const f = $('setLogo').files[0];
+  try {
+    if (f) { const old = settings.storeLogo; settings.storeLogo = await uploadImageFile(f, 'branding', 300, 0.85); $('setLogo').value = ''; await saveSettings(); await deleteMedia(old); }
+    else await saveSettings();
+    toast('✅ Налаштування збережено');
+  } catch (e) { if (e.message !== 'LIMIT') alert(errMsg(e)); }
+};
+
+/* ---------- Категорії ---------- */
+function renderAdminCategories() {
+  $('adminCategoryTags').innerHTML = settings.categories.map((c, i) => `
+    <span class="tag">${esc(c)}<button onclick="window.editCategory(${i})" title="Перейменувати">✎</button><button onclick="window.removeCategory(${i})" title="Видалити">×</button></span>`).join('');
+}
+window.addCategory = async () => {
+  const inp = $('newCategoryInput'); const v = inp.value.trim();
+  if (!v || settings.categories.includes(v)) return;
+  settings.categories.push(v); inp.value = '';
+  try { await saveSettings(); } catch (e) {}
+};
+window.editCategory = async i => {
+  const old = settings.categories[i]; const n = prompt('Нова назва розділу:', old);
+  if (!n || !n.trim() || n.trim() === old) return;
+  settings.categories[i] = n.trim();
+  try { await saveSettings(); await batchPatch(products.filter(p => p.category === old).map(p => [p._id, { category: n.trim() }])); } catch (e) {}
+};
+window.removeCategory = async i => {
+  const c = settings.categories[i]; const cnt = products.filter(p => p.category === c).length;
+  if (!confirm(`Видалити розділ «${c}»?${cnt ? `\n${cnt} товарів залишаться, але змініть їм категорію.` : ''}`)) return;
+  settings.categories.splice(i, 1);
+  try { await saveSettings(); } catch (e) {}
+};
+
+/* ---------- Групи фільтрів ---------- */
+function renderAdminFilterGroups() {
+  $('adminFilterGroups').innerHTML = settings.filterGroups.map((g, gi) => `
+  <div class="filter-group-card">
+    <div class="flex justify-between items-center mb-2"><span class="font-bold text-xs">${esc(g.name)}</span>
+      <div><button class="mini-icon-btn" onclick="window.renameFilterGroup(${gi})">✎</button><button class="mini-icon-btn" onclick="window.removeFilterGroup(${gi})">🗑</button></div></div>
+    <div class="mb-2">${g.values.map((v, vi) => `<span class="tag">${esc(v)}<button onclick="window.renameFilterValue(${gi},${vi})">✎</button><button onclick="window.removeFilterValue(${gi},${vi})">×</button></span>`).join('')}</div>
+    <div class="flex gap-2"><input type="text" id="newFilterValueInput_${gi}" placeholder="Нове значення" class="inp"><button onclick="window.addFilterValue(${gi})" class="btn-main sm">+</button></div>
+  </div>`).join('');
+}
+window.addFilterGroup = async () => {
+  const inp = $('newFilterGroupInput'); const v = inp.value.trim();
+  if (!v || settings.filterGroups.some(g => g.name === v)) return;
+  settings.filterGroups.push({ name: v, values: [] }); inp.value = '';
+  try { await saveSettings(); } catch (e) {}
+};
+window.renameFilterGroup = async gi => {
+  const g = settings.filterGroups[gi]; const n = prompt('Нова назва групи:', g.name);
+  if (!n || !n.trim() || n.trim() === g.name) return;
+  const old = g.name, nn = n.trim(); g.name = nn;
+  try {
+    await saveSettings();
+    await batchPatch(products.filter(p => p.filters?.[old]).map(p => { const f = clone(p.filters); f[nn] = f[old]; delete f[old]; return [p._id, { filters: f }]; }));
+  } catch (e) {}
+};
+window.removeFilterGroup = async gi => {
+  if (!confirm('Видалити цю групу фільтра повністю?')) return;
+  const [g] = settings.filterGroups.splice(gi, 1);
+  try {
+    await saveSettings();
+    await batchPatch(products.filter(p => p.filters?.[g.name]).map(p => { const f = clone(p.filters); delete f[g.name]; return [p._id, { filters: f }]; }));
+  } catch (e) {}
+};
+window.addFilterValue = async gi => {
+  const inp = $('newFilterValueInput_' + gi); const v = inp.value.trim(); const g = settings.filterGroups[gi];
+  if (!v || g.values.includes(v)) return;
+  g.values.push(v); inp.value = '';
+  try { await saveSettings(); } catch (e) {}
+};
+window.renameFilterValue = async (gi, vi) => {
+  const g = settings.filterGroups[gi]; const old = g.values[vi]; const n = prompt('Нова назва значення:', old);
+  if (!n || !n.trim() || n.trim() === old) return;
+  const nn = n.trim(); g.values[vi] = nn;
+  try {
+    await saveSettings();
+    await batchPatch(products.filter(p => p.filters?.[g.name]?.includes(old)).map(p => { const f = clone(p.filters); f[g.name] = f[g.name].map(v => v === old ? nn : v); return [p._id, { filters: f }]; }));
+  } catch (e) {}
+};
+window.removeFilterValue = async (gi, vi) => { settings.filterGroups[gi].values.splice(vi, 1); try { await saveSettings(); } catch (e) {} };
+
+/* ---------- Резервна копія ---------- */
+window.exportBackup = () => {
+  const data = { exportedAt: new Date().toISOString(), settings, products: products.map(cleanP) };
+  const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+};
+window.importBackup = async inp => {
+  const f = inp.files[0]; inp.value = ''; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    const have = new Set(products.map(p => p._id));
+    const all = data.products || [];
+    const toAdd = all.filter(p => p.id != null && !have.has(String(p.id)));
+    if (!confirm(`У копії ${all.length} товарів, нових серед них: ${toAdd.length}. Додати їх?\n(Наявні товари не змінюються і не видаляються.)`)) return;
+    for (let i = 0; i < toAdd.length; i += 400) {
+      const b = writeBatch(db);
+      toAdd.slice(i, i + 400).forEach(p => b.set(doc(productsCol, String(p.id)), clone({ ...normalizeProduct(p), id: String(p.id) })));
+      await b.commit();
+    }
+    let ch = false; (data.settings?.categories || []).forEach(c => { if (!settings.categories.includes(c)) { settings.categories.push(c); ch = true; } });
+    if (ch) await saveSettings();
+    toast(`✅ Відновлено ${toAdd.length} товарів`);
+  } catch (e) { onDbError(e); alert('Не вдалося прочитати копію: ' + errMsg(e)); }
+};
+
+/* ===================== ВІТРИНА ===================== */
+function renderStore() {
+  applyBranding(); renderCategoryNav(); renderStoreFilters(); renderBanner(); window.applyFilters();
+}
+function applyBranding() {
+  const name = settings.storeName || 'Fashion Стиль';
+  $('headerStoreName').innerText = name; $('footerStoreName').innerText = name;
+  $('pageTitle').innerText = name + ' — Інтернет-магазин одягу';
+  const logo = settings.storeLogo?.url ? `<img src="${esc(settings.storeLogo.url)}" class="w-full h-full object-cover" alt="">` : esc(name[0] || 'F');
+  $('headerLogoIcon').innerHTML = logo; $('footerLogoIcon').innerHTML = logo;
+  const tg = settings.telegram || 'yuli666666';
+  $('footerTg').href = `https://t.me/${tg}`; $('footerTg').textContent = `Telegram: @${tg}`;
+  $('checkoutBtn').textContent = `✈️ Оформити замовлення в Telegram (@${tg})`;
+  $('footerCopy').textContent = `© ${new Date().getFullYear()} ${name}. Замовлення приймаються в Telegram.`;
+}
+window.openTelegram = () => window.open(`https://t.me/${settings.telegram || 'yuli666666'}`, '_blank');
+function renderBanner() {
+  const b = settings.banner;
+  $('bannerSection').classList.toggle('hidden', b.enabled === false);
+  if (b.enabled === false) return;
+  const bg = b.image?.url
+    ? `background-image:linear-gradient(to right,rgba(0,0,0,.75),rgba(0,0,0,.2)),url('${esc(b.image.url)}')`
+    : 'background-image:linear-gradient(135deg,#402e28,#8c6d62)';
+  $('dynamicBannerContainer').innerHTML = `
+    <div class="absolute inset-0 bg-cover bg-center" style="${bg}"></div>
+    <div class="relative p-5 sm:p-10 text-white max-w-lg">
+      ${b.tag ? `<span class="bg-amber-500 text-neutral-900 text-[10px] font-bold px-2 py-0.5 rounded">${esc(b.tag)}</span>` : ''}
+      ${b.title ? `<h2 class="text-xl sm:text-3xl font-extrabold mt-2 leading-snug">${esc(b.title)}</h2>` : ''}
+      ${b.subtitle ? `<p class="text-neutral-100 mt-1 text-xs sm:text-sm">${esc(b.subtitle)}</p>` : ''}
+    </div>`;
+}
+function renderCategoryNav() {
+  const btn = (label, val, active) => `<button onclick="window.filterCategory(${val})" class="hover:text-amber-300 font-medium px-1 py-1.5 ${active ? 'text-amber-300' : ''}">${esc(label)}</button>`;
+  $('categoryNav').innerHTML = btn('Усі товари', "'all'", currentCategory === 'all')
+    + settings.categories.map((c, i) => btn(c, i, currentCategory === c)).join('');
+}
+window.filterCategory = function (v) {
+  currentCategory = v === 'all' ? 'all' : (settings.categories[v] ?? 'all');
+  $('catalogTitle').innerText = currentCategory === 'all' ? 'Каталог товарів' : currentCategory;
+  renderCategoryNav(); window.applyFilters();
+};
+function renderStoreFilters() {
+  $('dynamicFilterGroups').innerHTML = settings.filterGroups.map((g, gi) => g.values.length ? `
+    <div><label class="block text-[11px] font-medium text-neutral-700 mb-1">${esc(g.name)}:</label>
+    <div class="flex flex-wrap gap-1.5">${g.values.map((v, vi) => `<button onclick="window.toggleFilterValue(${gi},${vi})" class="size-chip ${(selectedFilters[g.name] || []).includes(v) ? 'active' : ''}">${esc(v)}</button>`).join('')}</div></div>` : '').join('');
+}
+window.toggleFilterValue = function (gi, vi) {
+  const g = settings.filterGroups[gi]; if (!g) return;
+  toggleIn(selectedFilters, gi, vi); renderStoreFilters(); window.applyFilters();
+};
+window.resetFilters = function () {
+  $('minPrice').value = ''; $('maxPrice').value = ''; $('searchInput').value = ''; $('sortOrder').value = 'default';
+  selectedFilters = {}; renderStoreFilters(); window.applyFilters();
+};
+window.applyFilters = function () {
+  if (!productsLoaded) { $('productGrid').innerHTML = '<div class="col-span-full py-10 text-center text-neutral-400 text-xs">Завантаження товарів…</div>'; return; }
+  let r = products.filter(visible);
+  const q = $('searchInput').value.toLowerCase().trim();
+  const minP = parseFloat($('minPrice').value) || 0, maxP = parseFloat($('maxPrice').value) || Infinity;
+  if (currentCategory !== 'all') r = r.filter(p => p.category === currentCategory);
+  if (q) r = r.filter(p => `${p.title} ${p.desc} ${p.color} ${p.material}`.toLowerCase().includes(q));
+  r = r.filter(p => p.price >= minP && p.price <= maxP);
+  Object.entries(selectedFilters).forEach(([g, want]) => { if (want.length) r = r.filter(p => p.filters?.[g]?.some(v => want.includes(v))); });
+  const s = $('sortOrder').value;
+  if (s === 'cheap') r.sort((a, b) => a.price - b.price); else if (s === 'expensive') r.sort((a, b) => b.price - a.price);
+  $('productCount').innerText = `Знайдено: ${r.length}`;
+  $('productGrid').innerHTML = r.length ? r.map(productCard).join('') : '<div class="col-span-full py-8 text-center text-neutral-500 text-xs">Товарів не знайдено</div>';
+};
+$('searchInput').addEventListener('input', () => window.applyFilters());
+function productCard(p) {
+  const id = p._id;
+  return `<div class="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-sm flex flex-col justify-between">
+    <div>
+      <div class="relative aspect-square bg-neutral-100 cursor-pointer" onclick="window.openProductModal('${id}')">
+        ${p.images[0] ? `<img src="${esc(p.images[0].url)}" loading="lazy" class="w-full h-full object-cover" alt="${esc(p.title)}">` : '<div class="w-full h-full flex items-center justify-center text-neutral-300 text-3xl">📦</div>'}
+        ${p.images.length > 1 ? `<span class="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-1.5 rounded">📷 ${p.images.length}</span>` : ''}
+        ${p.video ? '<span class="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[9px] px-1.5 rounded">🎥</span>' : ''}
+      </div>
+      <div class="p-2.5">
+        <span class="text-[9px] text-neutral-500 uppercase">${esc(p.category)}</span>
+        <h3 onclick="window.openProductModal('${id}')" class="font-bold text-xs text-neutral-900 mt-0.5 cursor-pointer line-clamp-2">${esc(p.title)}</h3>
+      </div>
+    </div>
+    <div class="p-2.5 pt-0 flex items-center justify-between gap-1">
+      <div class="leading-tight"><span class="text-xs font-extrabold">${p.price} грн</span>${p.priceNote ? `<div class="text-[9px] text-neutral-500">${esc(p.priceNote)}</div>` : ''}</div>
+      <button onclick="window.addToCart('${id}')" class="px-2.5 py-1.5 bg-brand-700 hover:bg-brand-800 text-white text-[10px] font-bold rounded min-h-[36px]">У кошик</button>
+    </div>
+  </div>`;
+}
+window.openProductModal = function (id) {
+  const p = findP(id); if (!p) return;
+  const media = [...p.images.map(m => ({ type: 'image', url: m.url })), ...(p.video ? [{ type: 'video', url: p.video.url }] : [])];
+  window.currentModalMedia = media;
+  const first = media[0];
+  const rows = Object.entries(p.filters || {}).filter(([, v]) => v?.length).map(([k, v]) => `<div><strong>${esc(k)}:</strong> ${esc(v.join(', '))}</div>`).join('');
+  $('modalContent').innerHTML = `
+    <div class="space-y-2">
+      <div id="mainModalMedia" class="aspect-square bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center">${mediaHtml(first)}</div>
+      ${media.length > 1 ? `<div class="flex gap-1.5 overflow-x-auto pb-1">${media.map((m, i) => m.type === 'video'
+        ? `<div onclick="window.selectModalMedia(${i})" class="w-14 h-14 shrink-0 rounded cursor-pointer bg-neutral-800 flex items-center justify-center text-white">▶</div>`
+        : `<img src="${esc(m.url)}" onclick="window.selectModalMedia(${i})" class="w-14 h-14 shrink-0 object-cover rounded cursor-pointer border">`).join('')}</div>` : ''}
+    </div>
+    <div>
+      <span class="text-[10px] text-neutral-500 uppercase">${esc(p.category)}</span>
+      <h2 class="text-base font-bold text-neutral-900 mt-0.5">${esc(p.title)}</h2>
+      <p class="text-sm font-extrabold text-brand-800 mt-1">${p.price} грн ${p.priceNote ? `<span class="text-xs font-normal text-neutral-500">${esc(p.priceNote)}</span>` : ''}</p>
+      <p class="text-xs text-neutral-600 mt-2 whitespace-pre-line">${esc(p.desc)}</p>
+      <div class="mt-3 space-y-1 text-xs text-neutral-700">
+        ${p.color ? `<div><strong>Колір:</strong> ${esc(p.color)}</div>` : ''}
+        ${p.material ? `<div><strong>Матеріал:</strong> ${esc(p.material)}</div>` : ''}
+        ${rows}
+      </div>
+    </div>
+    <button onclick="window.addToCart('${id}'); window.closeProductModal();" class="w-full py-3 bg-brand-700 text-white rounded-xl font-bold text-xs min-h-[48px]">Додати в кошик</button>`;
+  $('productModal').classList.remove('hidden');
+};
+function mediaHtml(m) {
+  if (!m) return '<span class="text-4xl text-neutral-300">📦</span>';
+  return m.type === 'video' ? `<video src="${esc(m.url)}" controls playsinline class="w-full h-full object-contain bg-black"></video>` : `<img src="${esc(m.url)}" class="w-full h-full object-cover">`;
+}
+window.selectModalMedia = i => { const m = (window.currentModalMedia || [])[i]; if (m) $('mainModalMedia').innerHTML = mediaHtml(m); };
+window.closeProductModal = () => { $('productModal').classList.add('hidden'); document.querySelectorAll('#modalContent video').forEach(v => v.pause()); };
+window.toggleMobileFilters = () => {
+  const c = $('filterContent'); c.classList.toggle('hidden');
+  $('filterToggleIcon').innerText = c.classList.contains('hidden') ? '▼' : '▲';
+};
+
+/* ---------- Кошик ---------- */
+window.toggleCartDrawer = () => { $('cartDrawer').classList.toggle('translate-x-full'); $('cartOverlay').classList.toggle('hidden'); lockBody(); renderCart(); };
+window.addToCart = id => {
+  const p = findP(id); if (!p) return;
+  const ex = cart.find(x => x.id === id);
+  if (ex) ex.qty++; else cart.push({ id, title: p.title, price: p.price, priceNote: p.priceNote, img: p.images[0]?.url || '', qty: 1 });
+  updateCartBadge(); window.toggleCartDrawer();
+};
+window.updateCartQty = (id, d) => {
+  const it = cart.find(i => i.id === id);
+  if (it) { it.qty += d; if (it.qty <= 0) cart = cart.filter(i => i.id !== id); }
+  updateCartBadge(); renderCart();
+};
+function updateCartBadge() { $('cartBadge').innerText = cart.reduce((s, i) => s + i.qty, 0); }
+function renderCart() {
+  const box = $('cartItemsContainer');
+  if (!cart.length) { box.innerHTML = '<p class="text-neutral-500 text-center py-8 text-xs">Кошик порожній</p>'; $('cartTotalPrice').innerText = '0 грн'; return; }
+  let total = 0;
+  box.innerHTML = cart.map(it => {
+    total += it.price * it.qty;
+    return `<div class="flex items-center gap-2.5 bg-neutral-50 p-2 rounded-xl border text-xs">
+      ${it.img ? `<img src="${esc(it.img)}" class="w-12 h-12 object-cover rounded-lg">` : '<div class="w-12 h-12 flex items-center justify-center bg-neutral-100 rounded-lg">📦</div>'}
+      <div class="flex-1 min-w-0"><h4 class="font-bold truncate">${esc(it.title)}</h4><p class="text-neutral-600">${it.price} грн ${esc(it.priceNote)}</p></div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="window.updateCartQty('${it.id}',-1)" class="w-9 h-9 border rounded bg-white font-bold">-</button><span>${it.qty}</span>
+        <button onclick="window.updateCartQty('${it.id}',1)" class="w-9 h-9 border rounded bg-white font-bold">+</button>
+      </div></div>`;
+  }).join('');
+  $('cartTotalPrice').innerText = `${total} грн`;
+}
+window.checkoutTelegram = () => {
+  if (!cart.length) return alert('Кошик порожній');
+  let msg = `🛍 Замовлення у магазині "${settings.storeName}":\n\n`, total = 0;
+  cart.forEach(it => { msg += `- ${it.title} (${it.qty} шт.) — ${it.price * it.qty} грн ${it.priceNote}\n`; total += it.price * it.qty; });
+  msg += `\nЗагальна сума: ${total} грн`;
+  window.open(`https://t.me/${settings.telegram || 'yuli666666'}?text=${encodeURIComponent(msg)}`, '_blank');
+  cart = []; updateCartBadge(); renderCart(); window.toggleCartDrawer();
+};
+
+renderStore();
+</script>
+</body>
+</html>
