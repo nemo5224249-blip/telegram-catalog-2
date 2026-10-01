@@ -134,6 +134,7 @@ body.lock{overflow:hidden}
 <div id="mobileBottomBar" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 z-40 flex justify-around items-center pt-2 px-1 shadow-2xl">
   <button onclick="window.filterCategory('all'); window.scrollTo({top:0,behavior:'smooth'});" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">🏠</span>Головна</button>
   <button onclick="window.toggleCartDrawer()" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">🛒</span>Кошик</button>
+  <button onclick="window.toggleInfoMenu(true)" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">ℹ️</span>Інфо</button>
   <button onclick="window.openTelegram()" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">💬</span>Telegram</button>
 </div>
 
@@ -141,7 +142,7 @@ body.lock{overflow:hidden}
 <div id="adminOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.closeAdmin()"></div>
 <div id="adminPanel" class="fixed right-0 top-0 h-full w-full max-w-xl bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
   <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
-    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.5</span></h2>
+    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.6</span></h2>
     <button onclick="window.closeAdmin()" class="text-xl font-bold w-10 h-10">&times;</button>
   </div>
   <div class="p-3 sm:p-5 flex-1 overflow-y-auto space-y-3" style="padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))">
@@ -211,9 +212,10 @@ body.lock{overflow:hidden}
       <summary>📦 Товари <span id="admCount" class="text-xs font-normal text-neutral-500 ml-1 mr-auto"></span></summary>
       <div class="adm-body space-y-2">
         <div class="flex gap-2">
-          <input id="admSearch" type="search" class="inp" placeholder="Пошук у товарах…" oninput="window.renderAdminProducts(true)">
+          <input id="admSearch" type="search" class="inp" placeholder="🔍 Пошук за артикулом або назвою" oninput="window.renderAdminProducts(true)">
           <button onclick="window.addManualProduct()" class="btn-main whitespace-nowrap">➕ Вручну</button>
         </div>
+        <button onclick="window.assignMissingSkus()" class="btn-sec w-full sm">🏷 Присвоїти артикули товарам без артикулу</button>
         <div class="flex gap-1.5 overflow-x-auto pb-1" id="admStatusTabs"></div>
         <div id="admImportFilter"></div>
         <div id="adminProductList"></div>
@@ -243,6 +245,16 @@ body.lock{overflow:hidden}
       </div>
     </details>
 
+    <!-- 5б. Сторінки -->
+    <details class="adm-sec" id="secPages">
+      <summary>📄 Сторінки (оплата, доставка, статті)</summary>
+      <div class="adm-body space-y-2">
+        <p class="text-[11px] text-neutral-500">Посилання на сторінки з'являються внизу сайту, а на телефоні — в кнопці «ℹ️ Інфо». У тексті: порожній рядок — новий абзац, **так** — жирний, рядок з «- » — пункт списку, посилання стають клікабельними.</p>
+        <div id="adminPages"></div>
+        <button onclick="window.addPage()" class="btn-main w-full">➕ Додати сторінку</button>
+      </div>
+    </details>
+
     <!-- 6. Налаштування -->
     <details class="adm-sec" id="secSettings">
       <summary>⚙️ Налаштування</summary>
@@ -251,6 +263,8 @@ body.lock{overflow:hidden}
         <div><label class="lbl">Telegram для замовлень (без @)</label><input id="setTelegram" class="inp"></div>
         <div><label class="lbl">Логотип</label><input type="file" id="setLogo" accept="image/*" class="file-inp"></div>
         <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="setAllowNew" class="w-5 h-5"> Gemini може сам створювати нові категорії</label>
+        <div><label class="lbl">📝 Опис для Gemini — ваші постійні побажання до назв і описів нових товарів</label>
+          <textarea id="setGeminiInstr" rows="4" maxlength="2000" class="inp" placeholder="Напр.: пиши коротко, 2–3 речення, без назв брендів, в кінці додай про бережний догляд"></textarea></div>
         <button onclick="window.saveStoreSettings()" class="btn-main w-full">Зберегти налаштування</button>
         <div class="border-t pt-3 mt-2 space-y-2">
           <div class="font-bold text-xs">🔑 Gemini (зберігається тільки на цьому пристрої)</div>
@@ -294,9 +308,9 @@ body.lock{overflow:hidden}
     <details class="adm-sec">
       <summary>💾 Резервна копія</summary>
       <div class="adm-body space-y-2">
-        <p class="text-[11px] text-neutral-500">Товари зберігаються в базі окремо від коду сайту — оновлення сайту їх не видаляє. Копія — додаткова страховка.</p>
-        <button onclick="window.exportBackup()" class="btn-sec w-full">⬇️ Завантажити копію всіх товарів</button>
-        <label class="btn-sec w-full">⬆️ Відновити з копії (лише додає відсутні)<input type="file" accept=".json,application/json" onchange="window.importBackup(this)" class="absolute inset-0 opacity-0"></label>
+        <p class="text-[11px] text-neutral-500">У копію входять товари, артикули, а також налаштування: назва, логотип, фільтри, банер, сторінки, «Опис для Gemini». Самі фото лишаються в хмарі (у копії — посилання на них). Ключ Gemini в копію не потрапляє.</p>
+        <button onclick="window.exportBackup()" class="btn-sec w-full">⬇️ Завантажити повну копію</button>
+        <label class="btn-sec w-full">⬆️ Відновити з копії<input type="file" accept=".json,application/json" onchange="window.importBackup(this)" class="absolute inset-0 opacity-0"></label>
       </div>
     </details>
 
@@ -334,15 +348,36 @@ body.lock{overflow:hidden}
     </div>
     <p class="text-neutral-400 text-[11px] mb-2">Інтернет-магазин сучасного одягу та аксесуарів.</p>
     <a id="footerTg" href="#" target="_blank" class="text-amber-400 underline font-medium text-[11px]"></a>
+    <div id="footerPages" class="flex flex-wrap gap-x-4 gap-y-2 mt-3"></div>
   </div>
   <div id="footerCopy" class="max-w-7xl mx-auto px-3 pt-4 border-t border-neutral-800 text-center text-[10px] text-neutral-500"></div>
 </footer>
+
+<!-- ІНФО-МЕНЮ (телефон) -->
+<div id="infoMenu" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end md:items-center justify-center" onclick="if(event.target===this)window.toggleInfoMenu(false)">
+  <div class="bg-white w-full md:max-w-sm rounded-t-2xl md:rounded-2xl p-4 space-y-2" style="padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))">
+    <div class="font-bold text-sm mb-1">ℹ️ Інформація</div>
+    <div id="infoMenuList" class="space-y-2"></div>
+    <button onclick="window.toggleInfoMenu(false)" class="btn-sec w-full">Закрити</button>
+  </div>
+</div>
+
+<!-- СТОРІНКА (оплата / доставка / стаття) -->
+<div id="pageView" class="fixed inset-0 bg-white z-[60] hidden flex flex-col" style="padding-top:env(safe-area-inset-top,0px)">
+  <div class="bg-brand-800 text-white px-2 py-2 flex items-center gap-2">
+    <button onclick="window.closePage()" class="w-11 h-11 text-xl font-bold">←</button>
+    <h2 id="pageViewTitle" class="font-bold text-base flex-1 truncate"></h2>
+  </div>
+  <div class="flex-1 overflow-y-auto">
+    <div id="pageViewBody" class="max-w-2xl mx-auto p-4 text-sm text-neutral-800 leading-relaxed" style="padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))"></div>
+  </div>
+</div>
 
 <div id="toast" class="hidden"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const firebaseConfig = {
@@ -358,7 +393,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const settingsRef = doc(db, 'catalog', 'fashionStyleData');   // налаштування (як і раніше)
-const statsRef = doc(db, 'catalog', 'storageStats');          // лічильник зайнятого місця
+const statsRef = doc(db, 'catalog', 'storageStats');
+const countersRef = doc(db, 'catalog', 'skuCounters');     // лічильники автоматичних артикулів          // лічильник зайнятого місця
 const productsCol = collection(db, 'products');               // кожен товар — окремий документ
 const importsCol = collection(db, 'imports');                 // історія імпортів
 
@@ -377,7 +413,17 @@ let geminiDelays = DELAYS_FAST;              // пауза між товарам
 const CLEAN_EST = 220 * 1024;         // оцінка ваги старого фото без даних про розмір
 const LS_ADMIN = 'fs_admin', LS_KEY = 'fs_gemini_key', LS_MODEL = 'fs_gemini_model';
 const PAGE = 30;
+const DEFAULT_PAGES = [
+  { id: 'pg1', slug: 'oplata', title: 'Умови оплати', image: null,
+    body: 'Тут опишіть, як можна оплатити замовлення.\n\nНаприклад:\n- оплата на картку після підтвердження замовлення;\n- накладений платіж при отриманні.\n\n✏️ Змінити цей текст: адмін-панель → «📄 Сторінки».' },
+  { id: 'pg2', slug: 'dostavka', title: 'Умови доставки', image: null,
+    body: 'Тут опишіть умови доставки: якою службою, у які терміни, скільки коштує.\n\n✏️ Змінити цей текст: адмін-панель → «📄 Сторінки».' },
+  { id: 'pg3', slug: 'obmin', title: 'Обмін і повернення', image: null,
+    body: 'Тут опишіть умови обміну та повернення товару.\n\n✏️ Змінити цей текст: адмін-панель → «📄 Сторінки».' }
+];
+const SKU_DIGITS = 5;
 const DEFAULT_SETTINGS = {
+  geminiInstructions: '', catCodes: {}, pages: DEFAULT_PAGES,
   storeName: 'Fashion Стиль', storeLogo: null, telegram: 'yuli666666',
   categories: ['Жіночий одяг', 'Чоловічий одяг', 'Верхній одяг', 'Взуття', 'Аксесуари'],
   filterGroups: [], allowNewCategories: true,
@@ -394,6 +440,7 @@ let isAdmin = false, currentCategory = 'all', selectedFilters = {}, cart = [];
 let expanded = new Set(), admLimit = PAGE, admStatus = 'all', admImport = null;
 let importTab = 'step', stepFiles = [], stepVideo = null, stepUrls = [], draft = null, busy = false;
 let arc = null, arcThumbs = new Map();
+let editingPage = null, hashChecked = false, pagePushed = false;
 
 /* ---------- Допоміжні ---------- */
 const $ = id => document.getElementById(id);
@@ -435,7 +482,7 @@ function normalizeProduct(p) {
     category: p.category || '', filters: p.filters || {}, color: p.color || '', material: p.material || '',
     images: (p.images || []).map(normMedia).filter(Boolean), video: normMedia(p.video), desc: p.desc || '',
     status: p.status || 'published', createdAt: p.createdAt || 0, importId: p.importId || null,
-    sourceKey: p.sourceKey || null, source: p.source || '', pinned: !!p.pinned
+    sourceKey: p.sourceKey || null, source: p.source || '', pinned: !!p.pinned, sku: p.sku || ''
   };
 }
 
@@ -460,8 +507,10 @@ onSnapshot(settingsRef, async snap => {
   delete settings.products; delete settings.sizes;
   settingsLoaded = true; setConn(true);
   if (Array.isArray(d.products) && d.products.length && !d.productsMigrated) migrateLegacy(d.products);
+  if (!Array.isArray(settings.pages)) settings.pages = clone(DEFAULT_PAGES);
   renderStore();
-  if (isAdmin) { renderAdminCategories(); renderAdminFilterGroups(); window.renderAdminProducts(); }
+  if (isAdmin) { renderAdminCategories(); renderAdminFilterGroups(); window.renderAdminProducts(); if (!editingPage) renderAdminPages(); }
+  if (!hashChecked) { hashChecked = true; openPageFromHash(); }
 }, e => { setConn(false); onDbError(e); });
 
 onSnapshot(productsCol, snap => {
@@ -499,6 +548,46 @@ async function migrateLegacy(list) {
     toast('Товари перенесено в нове сховище ✓');
   } catch (e) { onDbError(e); } finally { migrating = false; }
 }
+
+/* ---------- Артикули ---------- */
+const LETTERS = s => (String(s).toUpperCase().match(/[A-ZА-ЯІЇЄҐЁ]/g) || []);
+function makeCatCode(name, taken) {
+  const words = String(name).trim().split(/\s+/).map(w => LETTERS(w).join('')).filter(Boolean);
+  const all = LETTERS(name);
+  const cands = [];
+  if (words.length >= 2) cands.push(words[0][0] + words[1][0]);   // Жіночий одяг → ЖО
+  if (all.length >= 2) cands.push(all[0] + all[1]);                // Взуття → ВЗ
+  if (words.length >= 2) for (let i = 1; i < words[1].length; i++) cands.push(words[0][0] + words[1][i]);
+  for (let i = 2; i < all.length; i++) cands.push(all[0] + all[i]);
+  for (const c of cands) if (c.length === 2 && !taken.has(c)) return c;
+  const base = all[0] || 'Т';
+  for (let n = 1; n < 100; n++) if (!taken.has(base + n)) return base + n;
+  return 'ТВ';
+}
+async function catCode(cat) {
+  const name = (cat || '').trim() || 'Товар';
+  if (!settings.catCodes || typeof settings.catCodes !== 'object') settings.catCodes = {};
+  if (settings.catCodes[name]) return settings.catCodes[name];
+  const code = makeCatCode(name, new Set(Object.values(settings.catCodes)));
+  settings.catCodes[name] = code;
+  try { await saveSettings(); } catch (e) {}
+  return code;
+}
+// Резервує номери в лічильнику (безпечно навіть якщо двоє додають товари одночасно)
+async function reserveSku(code, count = 1) {
+  return runTransaction(db, async tx => {
+    const s = await tx.get(countersRef);
+    const cur = (s.exists() && Number(s.data()[code])) || 0;
+    tx.set(countersRef, { [code]: cur + count }, { merge: true });
+    return cur + 1;
+  });
+}
+const fmtSku = (code, n) => `${code}-${String(n).padStart(SKU_DIGITS, '0')}`;
+async function autoSku(cat) {
+  try { const code = await catCode(cat); return fmtSku(code, await reserveSku(code)); }
+  catch (e) { console.error(e); return ''; }  // не вдалося — товар збережеться без артикула, його можна присвоїти кнопкою
+}
+const skuTaken = (v, exceptId) => v && products.find(p => p._id !== exceptId && (p.sku || '').toLowerCase() === v.toLowerCase());
 
 /* ---------- Збереження ---------- */
 async function saveSettings() {
@@ -676,7 +765,7 @@ function lockBody() {
 function openAdmin() {
   $('adminPanel').classList.remove('translate-x-full'); $('adminOverlay').classList.remove('hidden'); lockBody();
   fillAdminForms(); renderAdminCategories(); renderAdminFilterGroups();
-  window.renderAdminProducts(true); renderHistory(); renderStorage(); window.setImportTab(importTab);
+  window.renderAdminProducts(true); renderHistory(); renderStorage(); renderAdminPages(); window.setImportTab(importTab);
   if (statsLoaded && !statsExists) window.recountStorage();
 }
 window.closeAdmin = function () {
@@ -687,6 +776,7 @@ function fillAdminForms() {
   $('setStoreName').value = settings.storeName || '';
   $('setTelegram').value = settings.telegram || '';
   $('setAllowNew').checked = settings.allowNewCategories !== false;
+  $('setGeminiInstr').value = settings.geminiInstructions || '';
   $('setGeminiKey').value = ls.get(LS_KEY);
   $('setGeminiModel').value = ls.get(LS_MODEL) || DEFAULT_MODEL;
   const b = settings.banner;
@@ -753,7 +843,10 @@ function buildPrompt(text) {
 - Не вигадуй бренд, якщо його не видно чітко.
 - Ціну (price) бери лише з тексту поста, інакше null.
 - Існуючі категорії: ${JSON.stringify(settings.categories)}. Обирай з них; нову пропонуй (newCategory=true) лише якщо жодна не підходить.
-- Групи фільтрів і допустимі значення: ${JSON.stringify(groups)}. Використовуй тільки ці значення; якщо не впевнений — не додавай.`;
+- Групи фільтрів і допустимі значення: ${JSON.stringify(groups)}. Використовуй тільки ці значення; якщо не впевнений — не додавай.${settings.geminiInstructions ? `
+
+Побажання власника магазину до назви та опису (обов'язково виконуй; вони важливіші за загальні правила щодо стилю й довжини, але відповідь усе одно лише JSON у форматі вище):
+"""${settings.geminiInstructions}"""` : ''}`;
 }
 async function analyzeProduct(blobs, text) {
   const parts = [{ text: buildPrompt(text) }];
@@ -891,6 +984,7 @@ function renderDraft() {
     <div class="font-bold text-sm">👀 Попередній перегляд картки</div>
     <div class="flex gap-1.5 overflow-x-auto">${stepUrls.map(u => `<img src="${u}" class="w-20 h-20 object-cover rounded-lg shrink-0">`).join('')}</div>
     <div><label class="lbl">Назва</label><input class="inp" value="${esc(d.title)}" oninput="window.draftSet('title',this.value)"></div>
+    <div><label class="lbl">Артикул (порожньо — присвоїться автоматично)</label><input class="inp" maxlength="20" value="${esc(d.sku || '')}" placeholder="напр. ЖО-00001" oninput="window.draftSet('sku',this.value)"></div>
     <div class="grid grid-cols-2 gap-2">
       <div><label class="lbl">Ціна, грн</label><input type="number" inputmode="numeric" class="inp" value="${d.price}" oninput="window.draftSet('price',this.value)"></div>
       <div><label class="lbl">Примітка до ціни</label><input class="inp" value="${esc(d.priceNote)}" placeholder="+ вага" oninput="window.draftSet('priceNote',this.value)"></div>
@@ -923,6 +1017,7 @@ async function createProductFromFiles(data, files, video, status, modeLabel) {
   const impId = 'imp' + Date.now();
   const p = { ...normalizeProduct({}), ...data, _id: newId(), images: [], video: null, status, createdAt: Date.now(), importId: impId };
   p.id = p._id;
+  p.sku = String(data.sku || '').trim().slice(0, 20) || await autoSku(p.category);
   try {
     for (const b of imgs) p.images.push(await uploadBlob(b, 'products', 'jpg', 'image/jpeg'));
     if (video) p.video = await uploadVideoFile(video, video.name);
@@ -935,6 +1030,8 @@ window.commitDraft = async function (status) {
   if (busy || !draft) return;
   if (!stepFiles.length && !confirm('Товар без фото. Зберегти все одно?')) return;
   if (!(Number(draft.price) > 0) && !confirm('Ціна 0 грн. Зберегти без ціни?')) return;
+  const dupS = skuTaken(String(draft.sku || '').trim());
+  if (dupS && !confirm(`Артикул «${draft.sku}» вже є у товару «${dupS.title}». Все одно зберегти?`)) return;
   busy = true; setStepStatus('⏳ Завантажую фото в хмару…');
   try {
     await createProductFromFiles({ ...draft }, stepFiles, stepVideo, status, 'Покроково');
@@ -1221,6 +1318,7 @@ async function processGroup(g, publish, idx = arc.pos) {
   await ensureCategory(d.category);
   const p = { ...normalizeProduct({}), ...d, _id: newId(), images: [], video: null, status: publish ? 'published' : 'draft', createdAt: Date.now(), importId: arc.importId, sourceKey: g.key };
   p.id = p._id;
+  p.sku = await autoSku(p.category);
   try {
     geminiStatus(`☁️ Товар #${idx + 1}: завантажую ${big.length} фото в хмару…`);
     for (const b of big) p.images.push(await uploadBlob(b, 'products', 'jpg', 'image/jpeg'));
@@ -1235,9 +1333,33 @@ window.addEventListener('beforeunload', e => { if (arc?.running || busy) { e.pre
 /* ---------- Адмінка: товари ---------- */
 function admFiltered() {
   const q = ($('admSearch')?.value || '').toLowerCase().trim();
-  return products.filter(p => (admStatus === 'all' || p.status === admStatus) && (!admImport || p.importId === admImport)
-    && (!q || `${p.title} ${p.desc} ${p.category}`.toLowerCase().includes(q)));
+  const list = products.filter(p => (admStatus === 'all' || p.status === admStatus) && (!admImport || p.importId === admImport)
+    && (!q || `${p.sku} ${p.title} ${p.desc} ${p.category}`.toLowerCase().includes(q)));
+  if (q) list.sort((a, b) => ((b.sku || '').toLowerCase() === q) - ((a.sku || '').toLowerCase() === q)); // точний збіг артикула — першим
+  return list;
 }
+window.setSku = async (id, v) => {
+  v = String(v || '').trim().slice(0, 20);
+  const dup = skuTaken(v, id);
+  if (dup && !confirm(`Артикул «${v}» вже є у товару «${dup.title}». Все одно зберегти?`)) { window.renderAdminProducts(); return; }
+  try { await patchProduct(id, { sku: v }); toast('Артикул збережено ✓', 1500); } catch (e) {}
+};
+window.assignMissingSkus = async () => {
+  const list = products.filter(p => !p.sku).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  if (!list.length) return toast('У всіх товарів уже є артикули ✓');
+  if (!confirm(`Присвоїти артикули ${list.length} товарам без артикула?\n(за категорією, у порядку додавання, напр. ЖО-00001)`)) return;
+  try {
+    const byCode = {};
+    for (const p of list) { const code = await catCode(p.category); (byCode[code] = byCode[code] || []).push(p); }
+    const updates = [];
+    for (const [code, arr] of Object.entries(byCode)) {
+      const start = await reserveSku(code, arr.length);
+      arr.forEach((p, i) => updates.push([p._id, { sku: fmtSku(code, start + i) }]));
+    }
+    await batchPatch(updates);
+    toast(`🏷 Присвоєно ${updates.length} артикулів`);
+  } catch (e) { onDbError(e); alert('Не вдалося присвоїти артикули: ' + errMsg(e)); }
+};
 window.renderAdminProducts = function (resetPage) {
   if (!isAdmin) return;
   if (resetPage) admLimit = PAGE;
@@ -1269,7 +1391,7 @@ function adminCard(p) {
     ${thumb}
     <div class="flex-1 min-w-0">
       <div class="font-bold text-xs truncate">${p.pinned ? '📌 ' : ''}${esc(p.title || 'Без назви')}</div>
-      <div class="text-neutral-500 text-[11px] truncate">${p.price} грн ${esc(p.priceNote)} · ${esc(p.category || '—')}</div>
+      <div class="text-neutral-500 text-[11px] truncate">${p.sku ? `<b class="text-neutral-700">${esc(p.sku)}</b> · ` : ''}${p.price} грн ${esc(p.priceNote)} · ${esc(p.category || '—')}</div>
       <span class="badge ${sc}">${sl}</span>
     </div>
     <div class="flex flex-col gap-1 shrink-0">
@@ -1291,6 +1413,7 @@ function adminCard(p) {
     <div class="grid grid-cols-4 sm:grid-cols-5 gap-1.5">${slots}</div>
     <label class="upload-slot video-slot">${p.video ? `<video src="${esc(p.video.url)}" muted playsinline preload="metadata"></video><span class="remove-x" onclick="event.preventDefault();window.removeVideo('${id}')">×</span>` : '+ Відео (до 2 хв)'}<input type="file" accept="video/*" onchange="window.uploadVideo(event,'${id}')"></label>
     <div><label class="lbl">Назва</label><input class="inp" value="${esc(p.title)}" onchange="window.setField('${id}','title',this.value)"></div>
+    <div><label class="lbl">Артикул (можна змінити на свій, до 20 символів)</label><input class="inp" maxlength="20" value="${esc(p.sku)}" placeholder="напр. ЖО-00001" onchange="window.setSku('${id}',this.value)"></div>
     <div class="grid grid-cols-2 gap-2">
       <div><label class="lbl">Ціна, грн</label><input type="number" inputmode="numeric" class="inp" value="${p.price}" onchange="window.setField('${id}','price',this.value)"></div>
       <div><label class="lbl">Примітка до ціни</label><input class="inp" value="${esc(p.priceNote)}" placeholder="+ вага" onchange="window.setField('${id}','priceNote',this.value)"></div>
@@ -1362,6 +1485,7 @@ window.deleteProduct = async id => {
 window.addManualProduct = async () => {
   const id = newId();
   const p = { ...normalizeProduct({}), _id: id, id, title: 'Новий товар', category: settings.categories[0] || '', status: 'draft', createdAt: Date.now() };
+  p.sku = await autoSku(p.category);
   try { await saveProduct(p); expanded.add(id); admStatus = 'all'; admImport = null; if ($('admSearch')) $('admSearch').value = ''; window.renderAdminProducts(true); toast('Створено чернетку — заповніть поля'); } catch (e) {}
 };
 window.publishShownDrafts = async () => {
@@ -1434,6 +1558,7 @@ window.saveStoreSettings = async () => {
   settings.storeName = $('setStoreName').value.trim() || settings.storeName;
   settings.telegram = $('setTelegram').value.trim().replace(/^@/, '') || settings.telegram;
   settings.allowNewCategories = $('setAllowNew').checked;
+  settings.geminiInstructions = $('setGeminiInstr').value.trim().slice(0, 2000);
   const f = $('setLogo').files[0];
   try {
     if (f) { const old = settings.storeLogo; settings.storeLogo = await uploadImageFile(f, 'branding', 300, 0.85); $('setLogo').value = ''; await saveSettings(); await deleteMedia(old); }
@@ -1457,6 +1582,7 @@ window.editCategory = async i => {
   const old = settings.categories[i]; const n = prompt('Нова назва розділу:', old);
   if (!n || !n.trim() || n.trim() === old) return;
   settings.categories[i] = n.trim();
+  if (settings.catCodes?.[old] && !settings.catCodes[n.trim()]) settings.catCodes[n.trim()] = settings.catCodes[old];
   try { await saveSettings(); await batchPatch(products.filter(p => p.category === old).map(p => [p._id, { category: n.trim() }])); } catch (e) {}
 };
 window.removeCategory = async i => {
@@ -1517,34 +1643,162 @@ window.renameFilterValue = async (gi, vi) => {
 window.removeFilterValue = async (gi, vi) => { settings.filterGroups[gi].values.splice(vi, 1); try { await saveSettings(); } catch (e) {} };
 
 /* ---------- Резервна копія ---------- */
-window.exportBackup = () => {
-  const data = { exportedAt: new Date().toISOString(), settings, products: products.map(cleanP) };
+window.exportBackup = async () => {
+  let counters = {};
+  try { const c = await getDocFromServer(countersRef); if (c.exists()) counters = c.data(); } catch (e) {}
+  const st = clone(settings); delete st.products;
+  const data = { version: 2, exportedAt: new Date().toISOString(), settings: st, counters, products: products.map(cleanP) };
   const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast(`💾 Копію збережено: ${products.length} товарів + налаштування`);
 };
 window.importBackup = async inp => {
   const f = inp.files[0]; inp.value = ''; if (!f) return;
+  let data;
+  try { data = JSON.parse(await f.text()); } catch (e) { return alert('Це не файл резервної копії або він пошкоджений.'); }
   try {
-    const data = JSON.parse(await f.text());
+    // 1) Товари — лише ті, яких зараз немає
     const have = new Set(products.map(p => p._id));
     const all = data.products || [];
     const toAdd = all.filter(p => p.id != null && !have.has(String(p.id)));
-    if (!confirm(`У копії ${all.length} товарів, нових серед них: ${toAdd.length}. Додати їх?\n(Наявні товари не змінюються і не видаляються.)`)) return;
-    for (let i = 0; i < toAdd.length; i += 400) {
-      const b = writeBatch(db);
-      toAdd.slice(i, i + 400).forEach(p => b.set(doc(productsCol, String(p.id)), clone({ ...normalizeProduct(p), id: String(p.id) })));
-      await b.commit();
+    let added = 0;
+    if (!toAdd.length) toast('Усі товари з копії вже є на сайті', 3000);
+    else if (confirm(`У копії ${all.length} товарів, відсутніх зараз: ${toAdd.length}. Додати їх?\n(Наявні товари не змінюються і не видаляються.)`)) {
+      for (let i = 0; i < toAdd.length; i += 400) {
+        const b = writeBatch(db);
+        toAdd.slice(i, i + 400).forEach(p => b.set(doc(productsCol, String(p.id)), clone({ ...normalizeProduct(p), id: String(p.id) })));
+        await b.commit();
+      }
+      added = toAdd.length;
     }
-    let ch = false; (data.settings?.categories || []).forEach(c => { if (!settings.categories.includes(c)) { settings.categories.push(c); ch = true; } });
-    if (ch) await saveSettings();
-    toast(`✅ Відновлено ${toAdd.length} товарів`);
-  } catch (e) { onDbError(e); alert('Не вдалося прочитати копію: ' + errMsg(e)); }
+    // 2) Лічильники артикулів — беремо більше значення, щоб нові артикули не повторили старі
+    if (data.counters && typeof data.counters === 'object') {
+      await runTransaction(db, async tx => {
+        const c = await tx.get(countersRef); const cur = c.exists() ? c.data() : {};
+        const m = {}; for (const [k, v] of Object.entries(data.counters)) m[k] = Math.max(Number(v) || 0, Number(cur[k]) || 0);
+        tx.set(countersRef, m, { merge: true });
+      });
+    }
+    // 3) Налаштування — за вибором
+    if (data.settings && confirm('Відновити також налаштування магазину з копії?\n(назва, логотип, фільтри, банер, сторінки, категорії, «Опис для Gemini»)\n\nПоточні налаштування буде замінено на ті, що в копії.')) {
+      const st = clone(data.settings); delete st.products;
+      await setDoc(settingsRef, { ...st, productsMigrated: true });
+      toast(`✅ Відновлено: товарів ${added}, налаштування — так`, 4000);
+    } else {
+      let ch = false; (data.settings?.categories || []).forEach(c => { if (!settings.categories.includes(c)) { settings.categories.push(c); ch = true; } });
+      if (ch) await saveSettings();
+      toast(`✅ Відновлено товарів: ${added}`, 3000);
+    }
+  } catch (e) { onDbError(e); alert('Не вдалося відновити копію: ' + errMsg(e)); }
+};
+
+/* ---------- Сторінки (оплата, доставка, статті) ---------- */
+const TR = { а:'a',б:'b',в:'v',г:'h',ґ:'g',д:'d',е:'e',є:'ie',ж:'zh',з:'z',и:'y',і:'i',ї:'i',й:'i',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'kh',ц:'ts',ч:'ch',ш:'sh',щ:'shch',ь:'',ю:'iu',я:'ia',ы:'y',э:'e',ё:'e',ъ:'' };
+const slugify = t => String(t).toLowerCase().split('').map(c => TR[c] ?? c).join('').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'page';
+function uniqueSlug(title, exceptId) {
+  const base = slugify(title); let sl = base, n = 2;
+  while (pagesList().some(p => p.slug === sl && p.id !== exceptId)) sl = `${base}-${n++}`;
+  return sl;
+}
+const pagesList = () => Array.isArray(settings.pages) ? settings.pages : [];
+function richText(t) {
+  return esc(t).split(/\n{2,}/).map(b => '<p class="mb-3">' + b
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" class="text-brand-700 underline break-all">$1</a>')
+    .replace(/^- /gm, '• ')
+    .replace(/\n/g, '<br>') + '</p>').join('');
+}
+function renderPagesLinks() {
+  const pg = pagesList();
+  $('footerPages').innerHTML = pg.map(p => `<a href="#${esc(p.slug)}" onclick="event.preventDefault();window.openPage('${esc(p.id)}')" class="text-neutral-300 underline text-[11px] py-1">${esc(p.title)}</a>`).join('');
+  $('infoMenuList').innerHTML = pg.map(p => `<button onclick="window.toggleInfoMenu(false);window.openPage('${esc(p.id)}')" class="btn-sec w-full" style="justify-content:flex-start">📄 ${esc(p.title)}</button>`).join('')
+    || '<div class="text-xs text-neutral-400">Сторінок поки немає</div>';
+}
+window.toggleInfoMenu = show => $('infoMenu').classList.toggle('hidden', !show);
+window.openPage = (id, fromHash) => {
+  const p = pagesList().find(x => x.id === id); if (!p) return;
+  $('pageViewTitle').textContent = p.title;
+  $('pageViewBody').innerHTML = (p.image?.url ? `<img src="${esc(p.image.url)}" class="w-full rounded-xl mb-4" alt="">` : '')
+    + `<h1 class="text-xl font-extrabold mb-3">${esc(p.title)}</h1>` + richText(p.body || '');
+  $('pageView').classList.remove('hidden'); document.body.classList.add('lock');
+  if (!fromHash && location.hash !== '#' + p.slug) { history.pushState(null, '', '#' + p.slug); pagePushed = true; }
+};
+function hidePage() { $('pageView').classList.add('hidden'); lockBody(); }
+window.closePage = () => {
+  if (pagePushed) { pagePushed = false; history.back(); return; } // кнопка «Назад» телефону теж закриває сторінку
+  hidePage();
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+};
+function openPageFromHash() {
+  const slug = decodeURIComponent(location.hash.slice(1));
+  if (!slug) { if (!$('pageView').classList.contains('hidden')) hidePage(); return; }
+  const p = pagesList().find(x => x.slug === slug);
+  if (p) window.openPage(p.id, true);
+}
+window.addEventListener('hashchange', () => { pagePushed = false; openPageFromHash(); });
+
+function renderAdminPages() {
+  if (!isAdmin) return;
+  const pg = pagesList();
+  $('adminPages').innerHTML = pg.map((p, i) => editingPage === p.id ? `
+    <div class="product-admin-card space-y-2">
+      <div><label class="lbl">Назва сторінки</label><input id="pgTitle" class="inp" value="${esc(p.title)}"></div>
+      <div><label class="lbl">Текст</label><textarea id="pgBody" rows="10" class="inp">${esc(p.body)}</textarea></div>
+      <div><label class="lbl">Картинка (необов'язково)</label>
+        ${p.image?.url ? `<div class="relative mb-2"><img src="${esc(p.image.url)}" class="w-full h-28 object-cover rounded-lg"><span class="remove-x" onclick="window.removePageImage('${p.id}')">×</span></div>` : ''}
+        <input type="file" id="pgImg" accept="image/*" class="file-inp"></div>
+      <div class="text-[10px] text-neutral-400 break-all">Посилання для покупців: ${esc(location.origin + location.pathname)}#${esc(p.slug)}</div>
+      <div class="flex gap-2"><button onclick="window.savePage('${p.id}')" class="btn-main flex-1">💾 Зберегти</button><button onclick="window.editPage(null)" class="btn-sec flex-1">Скасувати</button></div>
+      <button onclick="window.deletePage('${p.id}')" class="btn-del w-full">🗑 Видалити сторінку</button>
+    </div>` : `
+    <div class="product-admin-card flex items-center gap-1.5">
+      <div class="flex-1 min-w-0"><div class="font-bold text-xs truncate">📄 ${esc(p.title)}</div><div class="text-[10px] text-neutral-400 truncate">#${esc(p.slug)}</div></div>
+      <button onclick="window.movePage(${i},-1)" class="btn-sec sm" ${i === 0 ? 'disabled' : ''}>⬆</button>
+      <button onclick="window.movePage(${i},1)" class="btn-sec sm" ${i === pg.length - 1 ? 'disabled' : ''}>⬇</button>
+      <button onclick="window.editPage('${p.id}')" class="btn-sec sm">✎ Змінити</button>
+    </div>`).join('') || '<div class="text-xs text-neutral-400">Сторінок немає</div>';
+}
+window.editPage = id => { editingPage = id; renderAdminPages(); };
+window.addPage = async () => {
+  const title = prompt('Назва нової сторінки:', 'Нова сторінка');
+  if (!title || !title.trim()) return;
+  const id = 'pg' + Date.now().toString(36);
+  settings.pages = [...pagesList(), { id, title: title.trim(), slug: uniqueSlug(title.trim(), id), body: '', image: null }];
+  editingPage = id;
+  try { await saveSettings(); } catch (e) {}
+  renderAdminPages();
+};
+window.savePage = async id => {
+  const p = pagesList().find(x => x.id === id); if (!p) return;
+  p.title = $('pgTitle').value.trim() || p.title;   // адреса (#…) не змінюється, щоб старі посилання працювали
+  p.body = $('pgBody').value;
+  const f = $('pgImg').files[0]; let old = null;
+  try {
+    if (f) { old = p.image; p.image = await uploadImageFile(f, 'branding', 1400, 0.8); }
+    await saveSettings(); if (old) await deleteMedia(old);
+    editingPage = null; renderAdminPages(); renderPagesLinks(); toast('✅ Сторінку збережено');
+  } catch (e) { if (e.message !== 'LIMIT') alert(errMsg(e)); }
+};
+window.removePageImage = async id => {
+  const p = pagesList().find(x => x.id === id); if (!p?.image || !confirm('Видалити картинку сторінки з хмари?')) return;
+  const old = p.image; p.image = null;
+  try { await saveSettings(); await deleteMedia(old); renderAdminPages(); } catch (e) {}
+};
+window.deletePage = async id => {
+  const p = pagesList().find(x => x.id === id); if (!p || !confirm(`Видалити сторінку «${p.title}»?`)) return;
+  settings.pages = pagesList().filter(x => x.id !== id); editingPage = null;
+  try { await saveSettings(); if (p.image) await deleteMedia(p.image); renderAdminPages(); renderPagesLinks(); toast('Сторінку видалено'); } catch (e) {}
+};
+window.movePage = async (i, d) => {
+  const a = [...pagesList()]; const j = i + d; if (j < 0 || j >= a.length) return;
+  [a[i], a[j]] = [a[j], a[i]]; settings.pages = a;
+  try { await saveSettings(); renderAdminPages(); renderPagesLinks(); } catch (e) {}
 };
 
 /* ===================== ВІТРИНА ===================== */
 function renderStore() {
-  applyBranding(); renderCategoryNav(); renderStoreFilters(); renderBanner(); window.applyFilters();
+  applyBranding(); renderCategoryNav(); renderStoreFilters(); renderBanner(); renderPagesLinks(); window.applyFilters();
 }
 function applyBranding() {
   const name = settings.storeName || 'Fashion Стиль';
@@ -1602,11 +1856,12 @@ window.applyFilters = function () {
   const q = $('searchInput').value.toLowerCase().trim();
   const minP = parseFloat($('minPrice').value) || 0, maxP = parseFloat($('maxPrice').value) || Infinity;
   if (currentCategory !== 'all') r = r.filter(p => p.category === currentCategory);
-  if (q) r = r.filter(p => `${p.title} ${p.desc} ${p.color} ${p.material}`.toLowerCase().includes(q));
+  if (q) r = r.filter(p => `${p.sku} ${p.title} ${p.desc} ${p.color} ${p.material}`.toLowerCase().includes(q));
   r = r.filter(p => p.price >= minP && p.price <= maxP);
   Object.entries(selectedFilters).forEach(([g, want]) => { if (want.length) r = r.filter(p => p.filters?.[g]?.some(v => want.includes(v))); });
   const s = $('sortOrder').value;
   if (s === 'cheap') r.sort((a, b) => a.price - b.price); else if (s === 'expensive') r.sort((a, b) => b.price - a.price);
+  if (q) r.sort((a, b) => ((b.sku || '').toLowerCase() === q) - ((a.sku || '').toLowerCase() === q));
   $('productCount').innerText = `Знайдено: ${r.length}`;
   $('productGrid').innerHTML = r.length ? r.map(productCard).join('') : '<div class="col-span-full py-8 text-center text-neutral-500 text-xs">Товарів не знайдено</div>';
 };
@@ -1621,7 +1876,7 @@ function productCard(p) {
         ${p.video ? '<span class="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[9px] px-1.5 rounded">🎥</span>' : ''}
       </div>
       <div class="p-2.5">
-        <span class="text-[9px] text-neutral-500 uppercase">${esc(p.category)}</span>
+        <span class="text-[9px] text-neutral-500 uppercase">${esc(p.category)}${p.sku ? ` · ${esc(p.sku)}` : ''}</span>
         <h3 onclick="window.openProductModal('${id}')" class="font-bold text-xs text-neutral-900 mt-0.5 cursor-pointer line-clamp-2">${esc(p.title)}</h3>
       </div>
     </div>
@@ -1647,6 +1902,7 @@ window.openProductModal = function (id) {
     <div>
       <span class="text-[10px] text-neutral-500 uppercase">${esc(p.category)}</span>
       <h2 class="text-base font-bold text-neutral-900 mt-0.5">${esc(p.title)}</h2>
+      ${p.sku ? `<div class="text-[11px] text-neutral-500 mt-0.5">Артикул: <b>${esc(p.sku)}</b></div>` : ''}
       <p class="text-sm font-extrabold text-brand-800 mt-1">${p.price} грн ${p.priceNote ? `<span class="text-xs font-normal text-neutral-500">${esc(p.priceNote)}</span>` : ''}</p>
       <p class="text-xs text-neutral-600 mt-2 whitespace-pre-line">${esc(p.desc)}</p>
       <div class="mt-3 space-y-1 text-xs text-neutral-700">
@@ -1674,7 +1930,7 @@ window.toggleCartDrawer = () => { $('cartDrawer').classList.toggle('translate-x-
 window.addToCart = id => {
   const p = findP(id); if (!p) return;
   const ex = cart.find(x => x.id === id);
-  if (ex) ex.qty++; else cart.push({ id, title: p.title, price: p.price, priceNote: p.priceNote, img: p.images[0]?.url || '', qty: 1 });
+  if (ex) ex.qty++; else cart.push({ id, title: p.title, sku: p.sku || '', price: p.price, priceNote: p.priceNote, img: p.images[0]?.url || '', qty: 1 });
   updateCartBadge(); window.toggleCartDrawer();
 };
 window.updateCartQty = (id, d) => {
@@ -1691,7 +1947,7 @@ function renderCart() {
     total += it.price * it.qty;
     return `<div class="flex items-center gap-2.5 bg-neutral-50 p-2 rounded-xl border text-xs">
       ${it.img ? `<img src="${esc(it.img)}" class="w-12 h-12 object-cover rounded-lg">` : '<div class="w-12 h-12 flex items-center justify-center bg-neutral-100 rounded-lg">📦</div>'}
-      <div class="flex-1 min-w-0"><h4 class="font-bold truncate">${esc(it.title)}</h4><p class="text-neutral-600">${it.price} грн ${esc(it.priceNote)}</p></div>
+      <div class="flex-1 min-w-0"><h4 class="font-bold truncate">${esc(it.title)}</h4>${it.sku ? `<div class="text-[10px] text-neutral-400">арт. ${esc(it.sku)}</div>` : ''}<p class="text-neutral-600">${it.price} грн ${esc(it.priceNote)}</p></div>
       <div class="flex items-center gap-1.5">
         <button onclick="window.updateCartQty('${it.id}',-1)" class="w-9 h-9 border rounded bg-white font-bold">-</button><span>${it.qty}</span>
         <button onclick="window.updateCartQty('${it.id}',1)" class="w-9 h-9 border rounded bg-white font-bold">+</button>
@@ -1702,7 +1958,7 @@ function renderCart() {
 window.checkoutTelegram = () => {
   if (!cart.length) return alert('Кошик порожній');
   let msg = `🛍 Замовлення у магазині "${settings.storeName}":\n\n`, total = 0;
-  cart.forEach(it => { msg += `- ${it.title} (${it.qty} шт.) — ${it.price * it.qty} грн ${it.priceNote}\n`; total += it.price * it.qty; });
+  cart.forEach(it => { msg += `- ${it.title}${it.sku ? ` [арт. ${it.sku}]` : ''} (${it.qty} шт.) — ${it.price * it.qty} грн ${it.priceNote}\n`; total += it.price * it.qty; });
   msg += `\nЗагальна сума: ${total} грн`;
   window.open(`https://t.me/${settings.telegram || 'yuli666666'}?text=${encodeURIComponent(msg)}`, '_blank');
   cart = []; updateCartBadge(); renderCart(); window.toggleCartDrawer();
