@@ -141,7 +141,7 @@ body.lock{overflow:hidden}
 <div id="adminOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.closeAdmin()"></div>
 <div id="adminPanel" class="fixed right-0 top-0 h-full w-full max-w-xl bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
   <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
-    <h2 class="font-bold text-lg">Панель адміністратора</h2>
+    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.4</span></h2>
     <button onclick="window.closeAdmin()" class="text-xl font-bold w-10 h-10">&times;</button>
   </div>
   <div class="p-3 sm:p-5 flex-1 overflow-y-auto space-y-3" style="padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))">
@@ -696,12 +696,20 @@ async function callGemini(parts, tries = geminiDelays.length + 1) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
   for (let a = 1; a <= tries; a++) {
     let r;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 40000); // Google не відповідає 40 с — пробуємо ще раз
     try {
       r = await fetch(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl.signal,
         body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } })
       });
-    } catch (e) { if (a < tries) { await sleep(3000 * a); continue; } throw new Error('Немає інтернету або Gemini недоступний'); }
+    } catch (e) {
+      clearTimeout(timer);
+      const why = e.name === 'AbortError' ? 'Google не відповідає' : 'Немає з’єднання з Gemini';
+      if (a < tries) { const w = geminiDelays[Math.min(a - 1, geminiDelays.length - 1)]; geminiStatus(`⏳ ${why}, повтор через ${Math.round(w / 1000)} с (спроба ${a + 1}/${tries})`); await sleep(w); continue; }
+      throw new Error(why);
+    }
+    clearTimeout(timer);
     if (r.ok) {
       const d = await r.json();
       const txt = (d.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
@@ -712,7 +720,9 @@ async function callGemini(parts, tries = geminiDelays.length + 1) {
     if ((r.status === 429 || r.status >= 500) && a < tries) {
       const hint = Number((body.match(/"retryDelay"\s*:\s*"(\d+)/) || [])[1]) || 0;
       const plan = geminiDelays[Math.min(a - 1, geminiDelays.length - 1)];
-      await sleep(Math.min(90000, Math.max(hint * 1000 + 500, plan)));
+      const wait = Math.min(90000, Math.max(hint * 1000 + 500, plan));
+      geminiStatus(`⏳ Google ${r.status === 429 ? 'обмежив запити' : 'перевантажений'} (${r.status}), повтор через ${Math.round(wait / 1000)} с (спроба ${a + 1}/${tries})`);
+      await sleep(wait);
       continue;
     }
     if (/API key|API_KEY/i.test(body)) throw new Error('Невірний API-ключ Gemini');
@@ -720,6 +730,10 @@ async function callGemini(parts, tries = geminiDelays.length + 1) {
     if (r.status === 429) throw new Error('Gemini: перевищено ліміт запитів, спробуйте пізніше');
     throw new Error(`Gemini помилка ${r.status}`);
   }
+}
+function geminiStatus(msg) {
+  if (arc?.running) { arc.current = msg; renderArcProgress(); }
+  else if (busy && $('stepStatus')) setStepStatus(esc(msg));
 }
 function buildPrompt(text) {
   const groups = settings.filterGroups.map(g => ({ name: g.name, values: g.values }));
@@ -1193,12 +1207,14 @@ async function processGroup(g, publish, idx = arc.pos) {
   if (vidE) { const b = await vidE.get(); if (b.size <= 50 * 1048576) vid = { blob: b, name: vidE.name }; else arc.log.push(`#${idx + 1}: відео більше 50 МБ — пропущено`); }
   await ensureSpace(big.reduce((s, b) => s + b.size, 0) + (vid?.blob.size || 0), { archive: true });
   const small = []; for (const b of big.slice(0, AI_PHOTOS)) small.push(await compressImage(b, 768, 0.7));
+  geminiStatus(`🤖 Товар #${idx + 1}: Gemini аналізує фото…`);
   const d = aiToDraft(await analyzeProduct(small, g.text), g.text);
   d.category = resolveCategoryAuto(d.category);
   await ensureCategory(d.category);
   const p = { ...normalizeProduct({}), ...d, _id: newId(), images: [], video: null, status: publish ? 'published' : 'draft', createdAt: Date.now(), importId: arc.importId, sourceKey: g.key };
   p.id = p._id;
   try {
+    geminiStatus(`☁️ Товар #${idx + 1}: завантажую ${big.length} фото в хмару…`);
     for (const b of big) p.images.push(await uploadBlob(b, 'products', 'jpg', 'image/jpeg'));
     if (vid) p.video = await uploadBlob(vid.blob, 'products', (vid.name.split('.').pop() || 'mp4').toLowerCase(), vid.blob.type || 'video/mp4');
     await saveProduct(p);
