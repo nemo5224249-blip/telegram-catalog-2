@@ -18,6 +18,20 @@ header{padding-top:env(safe-area-inset-top,0px)}
 body{padding-bottom:calc(5rem + env(safe-area-inset-bottom,0px))}
 @media(min-width:768px){body{padding-bottom:0}}
 body.lock{overflow:hidden}
+#admSizeBtn{display:none}
+@media(min-width:1024px){
+  #admSizeBtn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border:1px solid rgba(255,255,255,.45);border-radius:10px;font-size:13px;font-weight:700;min-height:40px}
+  #adminPanel.adm-full{max-width:none}
+  #adminPanel.adm-full #admScroll{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;grid-auto-flow:row dense}
+  #adminPanel.adm-full #admScroll>*{margin:0!important}
+  #adminPanel.adm-full #admScroll>.adm-wide,#adminPanel.adm-full #admScroll>.adm-row,#adminPanel.adm-full #admScroll>button{grid-column:1/-1}
+  #adminPanel.adm-full #adminProductList{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;align-items:start}
+  #adminPanel.adm-full #adminProductList .product-admin-card{margin:0}
+}
+@media(min-width:1600px){
+  #adminPanel.adm-full #admScroll{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #adminPanel.adm-full #admScroll>.adm-wide{grid-column:span 2}
+}
 .upload-slot{aspect-ratio:1/1;border:1px dashed #d4d4d4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#737373;position:relative;overflow:hidden;cursor:pointer;background:#fff;min-height:44px}
 .upload-slot img,.upload-slot video{width:100%;height:100%;object-fit:cover}
 .video-slot{aspect-ratio:unset;height:90px}
@@ -142,10 +156,13 @@ body.lock{overflow:hidden}
 <div id="adminOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.closeAdmin()"></div>
 <div id="adminPanel" class="fixed right-0 top-0 h-full w-full max-w-xl bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
   <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
-    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.6</span></h2>
-    <button onclick="window.closeAdmin()" class="text-xl font-bold w-10 h-10">&times;</button>
+    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.7</span></h2>
+    <div class="flex items-center gap-2">
+      <button id="admSizeBtn" onclick="window.toggleAdminSize()">⤡ Половина</button>
+      <button onclick="window.closeAdmin()" class="text-xl font-bold w-10 h-10">&times;</button>
+    </div>
   </div>
-  <div class="p-3 sm:p-5 flex-1 overflow-y-auto space-y-3" style="padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))">
+  <div id="admScroll" class="p-3 sm:p-5 flex-1 overflow-y-auto space-y-3" style="padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))">
 
     <!-- 1. Сховище фото -->
     <div class="adm-sec p-4">
@@ -160,7 +177,7 @@ body.lock{overflow:hidden}
     </div>
 
     <!-- 2. Імпорт -->
-    <details class="adm-sec" open>
+    <details class="adm-sec adm-wide" open>
       <summary>🤖 Імпорт товарів (Gemini)</summary>
       <div class="adm-body space-y-3">
         <div id="noKeyWarn"></div>
@@ -208,7 +225,7 @@ body.lock{overflow:hidden}
     </details>
 
     <!-- 3. Товари -->
-    <details class="adm-sec" id="secProducts" open>
+    <details class="adm-sec adm-row" id="secProducts" open>
       <summary>📦 Товари <span id="admCount" class="text-xs font-normal text-neutral-500 ml-1 mr-auto"></span></summary>
       <div class="adm-body space-y-2">
         <div class="flex gap-2">
@@ -220,6 +237,15 @@ body.lock{overflow:hidden}
         <div id="admImportFilter"></div>
         <div id="adminProductList"></div>
         <button id="admMore" onclick="window.admShowMore()" class="btn-sec w-full hidden">Показати ще</button>
+      </div>
+    </details>
+
+    <!-- 3б. Статистика -->
+    <details class="adm-sec adm-wide" id="secStats" ontoggle="if(this.open)window.loadStats()">
+      <summary>📊 Статистика</summary>
+      <div class="adm-body space-y-3">
+        <div class="flex gap-1.5 flex-wrap" id="statPeriods"></div>
+        <div id="statBody" class="space-y-4 text-xs text-neutral-500">Завантаження…</div>
       </div>
     </details>
 
@@ -377,7 +403,7 @@ body.lock{overflow:hidden}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const firebaseConfig = {
@@ -548,6 +574,30 @@ async function migrateLegacy(list) {
     toast('Товари перенесено в нове сховище ✓');
   } catch (e) { onDbError(e); } finally { migrating = false; }
 }
+
+/* ---------- Статистика (анонімно, без особистих даних) ---------- */
+const dayKey = (d = new Date()) => d.toLocaleDateString('sv-SE');         // 2026-10-01 за місцевим часом
+const statDayRef = k => doc(db, 'catalog', 'stat-' + k);
+const statTotalRef = doc(db, 'catalog', 'stat-total');
+const isAdminDevice = () => ls.get(LS_ADMIN) === ADMIN_HASH;              // свої кліки не рахуємо
+const safeKey = k => String(k ?? '').replace(/[.~*\/\[\]`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
+let statTotal = null, statPeriod = 7, lastFound = -1, searchTimer = null;
+function track(field, key) {
+  if (isAdminDevice()) return;
+  let data;
+  if (key === undefined) data = { [field]: increment(1) };
+  else { const k = safeKey(key); if (!k) return; data = { [field]: { [k]: increment(1) } }; }
+  const b = writeBatch(db);
+  b.set(statDayRef(dayKey()), data, { merge: true });
+  b.set(statTotalRef, data, { merge: true });
+  b.commit().catch(() => {});
+}
+(function countVisitor() {
+  if (isAdminDevice()) return;
+  const k = 'fs_seen_' + dayKey();
+  if (ls.get(k)) return;
+  ls.set(k, '1'); track('visitors');
+})();
 
 /* ---------- Артикули ---------- */
 const LETTERS = s => (String(s).toUpperCase().match(/[A-ZА-ЯІЇЄҐЁ]/g) || []);
@@ -762,11 +812,89 @@ function lockBody() {
   const open = !$('adminPanel').classList.contains('translate-x-full') || !$('cartDrawer').classList.contains('translate-x-full');
   document.body.classList.toggle('lock', open);
 }
+function applyAdminSize() {
+  const full = ls.get('fs_adm_full') !== '0';
+  $('adminPanel').classList.toggle('adm-full', full);
+  $('admSizeBtn').textContent = full ? '⤡ Половина' : '⤢ На весь екран';
+}
+window.toggleAdminSize = () => { ls.set('fs_adm_full', ls.get('fs_adm_full') === '0' ? '1' : '0'); applyAdminSize(); };
+
+const STAT_PERIODS = [[1, 'Сьогодні'], [7, '7 днів'], [30, '30 днів'], [0, 'Весь час']];
+async function fetchDays(n) {
+  const keys = [];
+  for (let i = n - 1; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); keys.push(dayKey(d)); }
+  const snaps = await Promise.all(keys.map(k => getDoc(statDayRef(k)).catch(() => null)));
+  return keys.map((k, i) => ({ key: k, data: snaps[i]?.exists() ? snaps[i].data() : {} }));
+}
+const sumMaps = (list, f) => { const o = {}; list.forEach(d => Object.entries(d[f] || {}).forEach(([k, v]) => { o[k] = (o[k] || 0) + (Number(v) || 0); })); return o; };
+const sumObj = o => Object.values(o || {}).reduce((s, v) => s + (Number(v) || 0), 0);
+const topList = (o, n) => Object.entries(o || {}).map(([k, v]) => [k, Number(v) || 0]).sort((a, b) => b[1] - a[1]).slice(0, n);
+function barRows(entries, label) {
+  if (!entries.length) return '<div class="text-xs text-neutral-400">Поки немає даних</div>';
+  const max = Math.max(1, ...entries.map(e => e[1]));
+  return entries.map(([k, v]) => `<div class="flex items-center gap-2 text-xs text-neutral-700 mb-1">
+    <div class="w-2/5 truncate">${label(k)}</div>
+    <div class="flex-1 progress-bar" style="height:8px"><div class="progress-fill" style="width:${v / max * 100}%"></div></div>
+    <div class="w-10 text-right font-bold">${v}</div></div>`).join('');
+}
+window.loadStats = async period => {
+  if (period !== undefined) statPeriod = period;
+  $('statPeriods').innerHTML = STAT_PERIODS.map(([n, l]) => `<button onclick="window.loadStats(${n})" class="size-chip ${statPeriod === n ? 'active' : ''}">${l}</button>`).join('')
+    + `<button onclick="window.loadStats()" class="size-chip" title="Оновити">🔄</button>`;
+  $('statBody').innerHTML = '⏳ Завантажую…';
+  try {
+    const t = await getDoc(statTotalRef); statTotal = t.exists() ? t.data() : {};
+    const days = await fetchDays(statPeriod === 0 ? 30 : statPeriod);
+    const ds = days.map(x => x.data);
+    const agg = statPeriod === 0 ? statTotal : {
+      visitors: ds.reduce((s, d) => s + (Number(d.visitors) || 0), 0),
+      views: sumMaps(ds, 'views'), carts: sumMaps(ds, 'carts'), cats: sumMaps(ds, 'cats'),
+      search: sumMaps(ds, 'search'), searchMiss: sumMaps(ds, 'searchMiss'), pages: sumMaps(ds, 'pages')
+    };
+    renderStats(agg, days);
+    window.renderAdminProducts();
+  } catch (e) { onDbError(e); $('statBody').textContent = 'Не вдалося завантажити статистику.'; }
+};
+function renderStats(a, days) {
+  const views = a.views || {}, carts = a.carts || {};
+  const ids = [...new Set([...Object.keys(views), ...Object.keys(carts)])];
+  const top = ids.map(id => ({ v: Number(views[id]) || 0, c: Number(carts[id]) || 0, p: findP(id) }))
+    .filter(x => x.p).sort((x, y) => y.v - x.v || y.c - x.c).slice(0, 20);
+  const maxDay = Math.max(1, ...days.map(d => Number(d.data.visitors) || 0));
+  const box = (n, l) => `<div class="bg-white border rounded-lg p-2 text-center"><div class="text-lg font-extrabold text-neutral-900">${n}</div><div class="text-[10px] text-neutral-500">${l}</div></div>`;
+  const chart = days.length > 1 ? `<div><div class="font-bold text-xs text-neutral-800 mb-1">👥 Відвідувачі по днях${statPeriod === 0 ? ' (останні 30 днів)' : ''}</div>
+    <div class="flex items-end gap-0.5 h-24 border-b border-neutral-300">${days.map(d => { const v = Number(d.data.visitors) || 0;
+      return `<div class="flex-1 rounded-t" style="background:#73574d;height:${v ? Math.max(4, v / maxDay * 100) : 1}%" title="${d.key}: ${v}"></div>`; }).join('')}</div>
+    <div class="flex justify-between text-[10px] text-neutral-400 mt-0.5"><span>${days[0].key.slice(5)}</span><span>${days[days.length - 1].key.slice(5)}</span></div></div>` : '';
+  $('statBody').innerHTML = `
+    <div class="grid grid-cols-3 gap-2">${box(Number(a.visitors) || 0, '👥 відвідувачів')}${box(sumObj(views), '👁 переглядів товарів')}${box(sumObj(carts), '🛒 у кошик')}</div>
+    ${chart}
+    <div><div class="font-bold text-xs text-neutral-800 mb-1">🏆 ТОП-20 товарів</div>
+      ${top.map((x, i) => `<div class="flex items-center gap-2 bg-white border rounded-lg p-1.5 mb-1">
+        <span class="text-[11px] w-5 text-neutral-400 text-center">${i + 1}</span>
+        ${x.p.images[0] ? `<img src="${esc(x.p.images[0].url)}" loading="lazy" class="w-10 h-10 object-cover rounded">` : '<div class="w-10 h-10 bg-neutral-200 rounded"></div>'}
+        <div class="flex-1 min-w-0 text-xs text-neutral-800"><div class="font-bold truncate">${esc(x.p.title)}</div><div class="text-[10px] text-neutral-500">${esc(x.p.sku)}</div></div>
+        <div class="text-xs text-neutral-800 whitespace-nowrap">👁 ${x.v} · 🛒 ${x.c}</div></div>`).join('') || '<div class="text-xs text-neutral-400">Поки немає даних</div>'}</div>
+    <div><div class="font-bold text-xs text-neutral-800 mb-1">🗂 Розділи</div>${barRows(topList(a.cats, 10), esc)}</div>
+    <div><div class="font-bold text-xs text-neutral-800 mb-1">🔍 Що шукають</div>${barRows(topList(a.search, 15), esc)}</div>
+    <div><div class="font-bold text-xs text-rose-700 mb-1">❓ Шукали, але не знайшли</div>${barRows(topList(a.searchMiss, 15), esc)}</div>
+    <div><div class="font-bold text-xs text-neutral-800 mb-1">📄 Сторінки</div>${barRows(topList(a.pages, 10), k => esc(pagesList().find(p => p.slug === k)?.title || k))}</div>
+    <p class="text-[10px] text-neutral-400">Кліки з пристроїв, де увійшли в адмінку, не рахуються. Статистика ведеться з моменту оновлення v1.7.</p>`;
+}
+const statLine = p => {
+  if (!statTotal) return '';
+  const v = Number(statTotal.views?.[p._id]) || 0, c = Number(statTotal.carts?.[p._id]) || 0;
+  return (v || c) ? `<div class="text-[10px] text-neutral-500">👁 ${v} · 🛒 ${c}</div>` : '';
+};
+
 function openAdmin() {
   $('adminPanel').classList.remove('translate-x-full'); $('adminOverlay').classList.remove('hidden'); lockBody();
   fillAdminForms(); renderAdminCategories(); renderAdminFilterGroups();
   window.renderAdminProducts(true); renderHistory(); renderStorage(); renderAdminPages(); window.setImportTab(importTab);
   if (statsLoaded && !statsExists) window.recountStorage();
+  applyAdminSize();
+  getDoc(statTotalRef).then(t => { statTotal = t.exists() ? t.data() : {}; window.renderAdminProducts(); }).catch(() => {});
+  if ($('secStats').open) window.loadStats();
 }
 window.closeAdmin = function () {
   $('adminPanel').classList.add('translate-x-full'); $('adminOverlay').classList.add('hidden'); lockBody();
@@ -1392,7 +1520,7 @@ function adminCard(p) {
     <div class="flex-1 min-w-0">
       <div class="font-bold text-xs truncate">${p.pinned ? '📌 ' : ''}${esc(p.title || 'Без назви')}</div>
       <div class="text-neutral-500 text-[11px] truncate">${p.sku ? `<b class="text-neutral-700">${esc(p.sku)}</b> · ` : ''}${p.price} грн ${esc(p.priceNote)} · ${esc(p.category || '—')}</div>
-      <span class="badge ${sc}">${sl}</span>
+      <span class="badge ${sc}">${sl}</span>${statLine(p)}
     </div>
     <div class="flex flex-col gap-1 shrink-0">
       <button onclick="window.toggleEdit('${id}')" class="btn-sec sm">✎ Змінити</button>
@@ -1718,6 +1846,7 @@ function renderPagesLinks() {
 window.toggleInfoMenu = show => $('infoMenu').classList.toggle('hidden', !show);
 window.openPage = (id, fromHash) => {
   const p = pagesList().find(x => x.id === id); if (!p) return;
+  track('pages', p.slug);
   $('pageViewTitle').textContent = p.title;
   $('pageViewBody').innerHTML = (p.image?.url ? `<img src="${esc(p.image.url)}" class="w-full rounded-xl mb-4" alt="">` : '')
     + `<h1 class="text-xl font-extrabold mb-3">${esc(p.title)}</h1>` + richText(p.body || '');
@@ -1836,6 +1965,7 @@ window.filterCategory = function (v) {
   currentCategory = v === 'all' ? 'all' : (settings.categories[v] ?? 'all');
   $('catalogTitle').innerText = currentCategory === 'all' ? 'Каталог товарів' : currentCategory;
   renderCategoryNav(); window.applyFilters();
+  if (currentCategory !== 'all') track('cats', currentCategory);
 };
 function renderStoreFilters() {
   $('dynamicFilterGroups').innerHTML = settings.filterGroups.map((g, gi) => g.values.length ? `
@@ -1863,9 +1993,19 @@ window.applyFilters = function () {
   if (s === 'cheap') r.sort((a, b) => a.price - b.price); else if (s === 'expensive') r.sort((a, b) => b.price - a.price);
   if (q) r.sort((a, b) => ((b.sku || '').toLowerCase() === q) - ((a.sku || '').toLowerCase() === q));
   $('productCount').innerText = `Знайдено: ${r.length}`;
+  lastFound = r.length;
   $('productGrid').innerHTML = r.length ? r.map(productCard).join('') : '<div class="col-span-full py-8 text-center text-neutral-500 text-xs">Товарів не знайдено</div>';
 };
-$('searchInput').addEventListener('input', () => window.applyFilters());
+$('searchInput').addEventListener('input', () => {
+  window.applyFilters();
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {               // рахуємо, коли людина закінчила друкувати
+    const q = $('searchInput').value.trim().toLowerCase();
+    if (q.length < 2) return;
+    track('search', q);
+    if (lastFound === 0) track('searchMiss', q);
+  }, 1500);
+});
 function productCard(p) {
   const id = p._id;
   return `<div class="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-sm flex flex-col justify-between">
@@ -1888,6 +2028,7 @@ function productCard(p) {
 }
 window.openProductModal = function (id) {
   const p = findP(id); if (!p) return;
+  track('views', p._id);
   const media = [...p.images.map(m => ({ type: 'image', url: m.url })), ...(p.video ? [{ type: 'video', url: p.video.url }] : [])];
   window.currentModalMedia = media;
   const first = media[0];
@@ -1929,6 +2070,7 @@ window.toggleMobileFilters = () => {
 window.toggleCartDrawer = () => { $('cartDrawer').classList.toggle('translate-x-full'); $('cartOverlay').classList.toggle('hidden'); lockBody(); renderCart(); };
 window.addToCart = id => {
   const p = findP(id); if (!p) return;
+  track('carts', p._id);
   const ex = cart.find(x => x.id === id);
   if (ex) ex.qty++; else cart.push({ id, title: p.title, sku: p.sku || '', price: p.price, priceNote: p.priceNote, img: p.images[0]?.url || '', qty: 1 });
   updateCartBadge(); window.toggleCartDrawer();
