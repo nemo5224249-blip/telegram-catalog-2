@@ -156,7 +156,7 @@ body.lock{overflow:hidden}
 <div id="adminOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.closeAdmin()"></div>
 <div id="adminPanel" class="fixed right-0 top-0 h-full w-full max-w-xl bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
   <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
-    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.7</span></h2>
+    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.8</span></h2>
     <div class="flex items-center gap-2">
       <button id="admSizeBtn" onclick="window.toggleAdminSize()">⤡ Половина</button>
       <button onclick="window.closeAdmin()" class="text-xl font-bold w-10 h-10">&times;</button>
@@ -402,9 +402,9 @@ body.lock{overflow:hidden}
 <div id="toast" class="hidden"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { initializeFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDc-8E2Sqzp27PPnNf9MYys9aaapD9N2xk",
@@ -416,7 +416,8 @@ const firebaseConfig = {
   appId: "1:461518983018:web:fae25cc1dec5da07c35f13"
 };
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+// Нова версія бібліотеки + запасний режим з'єднання: якщо основний канал не працює, браузер сам перейде на повільніший, але надійний
+const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 const storage = getStorage(app);
 const settingsRef = doc(db, 'catalog', 'fashionStyleData');   // налаштування (як і раніше)
 const statsRef = doc(db, 'catalog', 'storageStats');
