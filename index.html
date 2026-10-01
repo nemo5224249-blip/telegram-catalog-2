@@ -172,7 +172,7 @@ body.lock{overflow:hidden}
 
         <div id="postForm" class="space-y-3">
           <div>
-            <label class="lbl">Фото товару (до 5 шт.)</label>
+            <label class="lbl">Фото товару (до 10 шт.)</label>
             <input type="file" id="stepPhotos" accept="image/*" multiple onchange="window.onStepPhotos(this)" class="file-inp">
             <div id="stepThumbs" class="flex flex-wrap gap-1.5 mt-2"></div>
           </div>
@@ -254,7 +254,7 @@ body.lock{overflow:hidden}
         <button onclick="window.saveStoreSettings()" class="btn-main w-full">Зберегти налаштування</button>
         <div class="border-t pt-3 mt-2 space-y-2">
           <div class="font-bold text-xs">🔑 Gemini (зберігається тільки на цьому пристрої)</div>
-          <div><label class="lbl">API-ключ (з aistudio.google.com/apikey)</label><input id="setGeminiKey" type="password" class="inp" autocomplete="off" placeholder="AIza…"></div>
+          <div><label class="lbl">API-ключ (з aistudio.google.com/apikey)</label><input id="setGeminiKey" type="text" class="inp" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" style="-webkit-text-security:disc" placeholder="AIza…"></div>
           <div><label class="lbl">Модель</label><input id="setGeminiModel" class="inp"></div>
           <div class="flex gap-2"><button onclick="window.saveGemini()" class="btn-main flex-1">Зберегти ключ</button><button onclick="window.testGemini()" class="btn-sec flex-1">Перевірити</button></div>
           <div id="geminiTest" class="text-xs"></div>
@@ -365,8 +365,12 @@ const importsCol = collection(db, 'imports');                 // історія 
 /* ---------- Константи ---------- */
 const ADMIN_HASH = '05d50cf358ae70e7c9aa5fe49b6bfcaf353037f40e61083ce95c1c801c548e4f'; // SHA-256 пароля
 const STORAGE_LIMIT = 1024 * 1024 * 1024; // 1 ГБ
-const MAX_PHOTOS = 5;
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const MAX_PHOTOS = 10;
+const AI_PHOTOS = 6; // скільки фото відправляти в Gemini для аналізу
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+const IMG_MAX = 1080, IMG_Q = 0.72;   // сильніше стиснення: фото ~в 1,5 раза легші
+const GEMINI_GAP = 4000;              // пауза між товарами в архіві (щоб не впиратися в ліміт Google)
+const CLEAN_EST = 220 * 1024;         // оцінка ваги старого фото без даних про розмір
 const LS_ADMIN = 'fs_admin', LS_KEY = 'fs_gemini_key', LS_MODEL = 'fs_gemini_model';
 const PAGE = 30;
 const DEFAULT_SETTINGS = {
@@ -427,7 +431,7 @@ function normalizeProduct(p) {
     category: p.category || '', filters: p.filters || {}, color: p.color || '', material: p.material || '',
     images: (p.images || []).map(normMedia).filter(Boolean), video: normMedia(p.video), desc: p.desc || '',
     status: p.status || 'published', createdAt: p.createdAt || 0, importId: p.importId || null,
-    sourceKey: p.sourceKey || null, source: p.source || ''
+    sourceKey: p.sourceKey || null, source: p.source || '', pinned: !!p.pinned
   };
 }
 
@@ -527,6 +531,38 @@ function assertSpace(bytes) {
     throw new Error('LIMIT');
   }
 }
+/* Автоочищення: якщо не вистачає місця — пропонує видалити найстаріші товари (крім 📌 захищених).
+   ctx.archive = true → питає один раз на весь імпорт архіву. */
+const productBytes = p => [...p.images, p.video].filter(Boolean).reduce((s, m) => s + (m.size || (m.path ? CLEAN_EST : 0)), 0);
+async function removeProductFully(p) {
+  await deleteDoc(doc(productsCol, p._id)); expanded.delete(p._id);
+  for (const m of [...p.images, p.video]) await deleteMedia(m);
+}
+async function ensureSpace(bytes, ctx = {}) {
+  const need = (stats.usedBytes || 0) + bytes - STORAGE_LIMIT;
+  if (need <= 0) return;
+  const protectImport = ctx.archive ? arc?.importId : null;
+  const candidates = products
+    .filter(p => !p.pinned && (!protectImport || p.importId !== protectImport) && productBytes(p) > 0)
+    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  const target = need + (ctx.archive ? 30 * 1048576 : 2 * 1048576); // запас, щоб не питати на кожному товарі
+  const pick = []; let freed = 0;
+  for (const p of candidates) { if (freed >= target) break; pick.push(p); freed += productBytes(p); }
+  if (freed < need) {
+    alert(`⛔ Ліміт 1 ГБ!\nЗайнято ${mb(stats.usedBytes)} МБ, а старих незахищених товарів не вистачає, щоб звільнити місце.\nВидаліть щось вручну або зніміть 📌 з деяких товарів.`);
+    throw new Error('LIMIT');
+  }
+  const approved = ctx.archive && arc?.cleanupApproved;
+  if (!approved) {
+    const list = pick.slice(0, 8).map(p => '• ' + (p.title || 'Без назви')).join('\n') + (pick.length > 8 ? `\n…і ще ${pick.length - 8}` : '');
+    const msg = `Місця не вистачає (ліміт 1 ГБ).\nБуде видалено ${pick.length} найстаріших товарів разом із фото (≈ ${mb(freed)} МБ):\n${list}`
+      + (ctx.archive ? '\n\nДо кінця цього імпорту найстаріші товари видалятимуться без повторних питань.' : '') + '\n\nВидалити?';
+    if (!confirm(msg)) throw new Error('LIMIT');
+    if (ctx.archive && arc) arc.cleanupApproved = true;
+  }
+  for (const p of pick) await removeProductFully(p);
+  toast(`🧹 Видалено ${pick.length} старих товарів, звільнено ≈ ${mb(freed)} МБ`, 5000);
+}
 async function uploadBlob(blob, folder, ext, type) {
   assertSpace(blob.size);
   const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -537,8 +573,10 @@ async function uploadBlob(blob, folder, ext, type) {
   setDoc(statsRef, { usedBytes: increment(blob.size), fileCount: increment(1) }, { merge: true }).catch(onDbError);
   return { url, path, size: blob.size };
 }
-async function uploadImageFile(file, folder = 'products', max = 1200, q = 0.8) {
-  return uploadBlob(await compressImage(file, max, q), folder, 'jpg', 'image/jpeg');
+async function uploadImageFile(file, folder = 'products', max = IMG_MAX, q = IMG_Q) {
+  const blob = await compressImage(file, max, q);
+  await ensureSpace(blob.size);
+  return uploadBlob(blob, folder, 'jpg', 'image/jpeg');
 }
 function videoDuration(file) {
   return new Promise((res, rej) => {
@@ -556,6 +594,7 @@ async function checkVideo(file) {
 }
 async function uploadVideoFile(file, name = 'video.mp4') {
   await checkVideo(file);
+  await ensureSpace(file.size);
   const ext = (name.split('.').pop() || 'mp4').toLowerCase();
   return uploadBlob(file, 'products', ext, file.type || 'video/mp4');
 }
@@ -567,7 +606,10 @@ async function deleteMedia(m) {
   try { if (!size) size = (await getMetadata(r)).size; } catch (e) {}
   try { await deleteObject(r); }
   catch (e) { if (e.code !== 'storage/object-not-found') { console.error(e); return; } size = 0; }
-  if (size) setDoc(statsRef, { usedBytes: increment(-size), fileCount: increment(-1) }, { merge: true }).catch(onDbError);
+  if (size) {
+    stats.usedBytes = Math.max(0, (stats.usedBytes || 0) - size); stats.fileCount = Math.max(0, (stats.fileCount || 0) - 1); renderStorage();
+    setDoc(statsRef, { usedBytes: increment(-size), fileCount: increment(-1) }, { merge: true }).catch(onDbError);
+  }
 }
 window.recountStorage = async function () {
   if (!isAdmin) return;
@@ -644,7 +686,7 @@ function renderKeyWarn() {
 }
 
 /* ---------- Gemini ---------- */
-async function callGemini(parts, tries = 5) {
+async function callGemini(parts, tries = 6) {
   const key = ls.get(LS_KEY); if (!key) throw new Error('NO_KEY');
   const model = ls.get(LS_MODEL) || DEFAULT_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
@@ -663,7 +705,12 @@ async function callGemini(parts, tries = 5) {
       catch (e) { if (a < tries) continue; throw new Error('Gemini повернув незрозумілу відповідь'); }
     }
     const body = await r.text();
-    if ((r.status === 429 || r.status >= 500) && a < tries) { await sleep(5000 * 2 ** (a - 1)); continue; }
+    if ((r.status === 429 || r.status >= 500) && a < tries) {
+      const hint = Number((body.match(/"retryDelay"\s*:\s*"(\d+)/) || [])[1]) || 0;
+      const base = r.status === 429 ? 20000 : 10000;
+      await sleep(Math.min(90000, Math.max(hint * 1000 + 1000, base * a)));
+      continue;
+    }
     if (/API key|API_KEY/i.test(body)) throw new Error('Невірний API-ключ Gemini');
     if (r.status === 404) throw new Error(`Модель «${model}» не знайдена — змініть назву моделі в налаштуваннях`);
     if (r.status === 429) throw new Error('Gemini: перевищено ліміт запитів, спробуйте пізніше');
@@ -684,7 +731,7 @@ function buildPrompt(text) {
 }
 async function analyzeProduct(blobs, text) {
   const parts = [{ text: buildPrompt(text) }];
-  for (const b of blobs.slice(0, MAX_PHOTOS)) parts.push({ inline_data: { mime_type: 'image/jpeg', data: await blobToBase64(b) } });
+  for (const b of blobs.slice(0, AI_PHOTOS)) parts.push({ inline_data: { mime_type: 'image/jpeg', data: await blobToBase64(b) } });
   return await callGemini(parts);
 }
 /* Ціна з тексту: «2250+вага» → 2250 і примітка «+ вага» */
@@ -770,7 +817,7 @@ window.resetStep = function () {
   stepFiles = []; stepVideo = null; draft = null; $('stepText').value = '';
   renderStepThumbs(); renderDraft();
 };
-async function smallCopies(files) { const out = []; for (const f of files) out.push(await compressImage(f, 768, 0.7)); return out; }
+async function smallCopies(files) { const out = []; for (const f of files.slice(0, AI_PHOTOS)) out.push(await compressImage(f, 768, 0.7)); return out; }
 
 /* Варіант 1: покроково */
 window.runStepAnalyze = async function () {
@@ -844,8 +891,8 @@ window.draftCategory = v => {
   renderDraft();
 };
 async function createProductFromFiles(data, files, video, status, modeLabel) {
-  const imgs = []; for (const f of files.slice(0, MAX_PHOTOS)) imgs.push(await compressImage(f, 1200, 0.8));
-  assertSpace(imgs.reduce((s, b) => s + b.size, 0) + (video?.size || 0));
+  const imgs = []; for (const f of files.slice(0, MAX_PHOTOS)) imgs.push(await compressImage(f, IMG_MAX, IMG_Q));
+  await ensureSpace(imgs.reduce((s, b) => s + b.size, 0) + (video?.size || 0));
   await ensureCategory(data.category);
   const impId = 'imp' + Date.now();
   const p = { ...normalizeProduct({}), ...data, _id: newId(), images: [], video: null, status, createdAt: Date.now(), importId: impId };
@@ -861,6 +908,7 @@ async function createProductFromFiles(data, files, video, status, modeLabel) {
 window.commitDraft = async function (status) {
   if (busy || !draft) return;
   if (!stepFiles.length && !confirm('Товар без фото. Зберегти все одно?')) return;
+  if (!(Number(draft.price) > 0) && !confirm('Ціна 0 грн. Зберегти без ціни?')) return;
   busy = true; setStepStatus('⏳ Завантажую фото в хмару…');
   try {
     await createProductFromFiles({ ...draft }, stepFiles, stepVideo, status, 'Покроково');
@@ -1019,7 +1067,7 @@ function renderArcGroups() {
     const imgs = g.files.filter(f => f.kind === 'image').length, vids = g.files.filter(f => f.kind === 'video').length;
     return `<div class="flex gap-2 items-center bg-white border rounded-lg p-2 mb-1.5 ${g.skip ? 'opacity-40' : ''}">
       <img data-arc="${i}" class="w-14 h-14 object-cover rounded bg-neutral-200 shrink-0" alt="">
-      <div class="flex-1 min-w-0 text-[11px]"><b>#${i + 1}</b> · 📷 ${imgs}${vids ? ` · 🎥 ${vids}` : ''}${imgs > MAX_PHOTOS ? ` <span class="text-amber-700">(візьму перші ${MAX_PHOTOS})</span>` : ''}
+      <div class="flex-1 min-w-0 text-[11px]"><b>#${i + 1}</b>${g.ok ? ' ✅' : g.failed ? ' ❌' : ''} · 📷 ${imgs}${vids ? ` · 🎥 ${vids}` : ''}${imgs > MAX_PHOTOS ? ` <span class="text-amber-700">(візьму перші ${MAX_PHOTOS})</span>` : ''}
         <input class="inp mt-1" style="padding:4px 8px" value="${esc(g.text)}" placeholder="Текст / ціна" onchange="window.arcText(${i},this.value)"></div>
       <div class="flex flex-col gap-1 shrink-0">
         ${i > 0 ? `<button onclick="window.arcMerge(${i})" class="btn-sec sm">⤴ Об’єднати</button>` : ''}
@@ -1058,8 +1106,8 @@ function renderArcProgress() {
     <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${pct}%"></div></div>
     <div class="text-[11px] text-neutral-600">✅ Додано: ${arc.done} · ⏭ Вже були: ${arc.skipped} · ❌ Помилки: ${arc.failed}</div>
     ${arc.current ? `<div class="text-[11px] text-neutral-500 truncate">${esc(arc.current)}</div>` : ''}
-    <div class="flex gap-2">${finished ? '<div class="text-xs font-bold text-emerald-700">🎉 Готово! Перевірте товари в розділі «Товари».</div>'
-      : !arc.running ? `<button onclick="window.arcStart()" class="btn-main flex-1">▶️ ${arc.pos > 0 ? 'Продовжити' : 'Почати обробку'}</button>`
+    <div class="flex gap-2 flex-wrap">${finished && !arc.running ? `<div class="text-xs font-bold text-emerald-700 w-full">🎉 Готово! Перевірте товари в розділі «Товари».</div>${arc.failed ? `<button onclick="window.arcRetry()" class="btn-main flex-1">🔁 Повторити невдалі (${arc.failed})</button>` : ''}`
+      : !arc.running ? `<button onclick="window.arcStart(false)" class="btn-main flex-1">▶️ ${arc.pos > 0 ? 'Продовжити' : 'Почати обробку'}</button>`
       : `<button onclick="window.arcPause()" class="btn-sec flex-1">${arc.paused ? '▶️ Продовжити' : '⏸ Пауза'}</button><button onclick="window.arcStop()" class="btn-del flex-1">⏹ Стоп</button>`}</div>
     ${arc.running ? '<div class="text-[10px] text-neutral-500">Не закривайте вкладку і не блокуйте телефон до завершення.</div>' : ''}
     ${arc.log.length ? `<details class="text-[11px]"><summary class="cursor-pointer text-rose-600">Журнал помилок (${arc.log.length})</summary><div class="mt-1 space-y-0.5 max-h-40 overflow-y-auto">${arc.log.map(l => `<div>${esc(l)}</div>`).join('')}</div></details>` : ''}
@@ -1067,7 +1115,30 @@ function renderArcProgress() {
 }
 window.arcPause = () => { arc.paused = !arc.paused; renderArcProgress(); };
 window.arcStop = () => { arc.stop = true; arc.paused = false; renderArcProgress(); };
-window.arcStart = async function () {
+async function arcProcessOne(i, publish, known) {
+  const g = arc.groups[i];
+  if (!g || g.skip || g.ok) return;
+  if (known.has(g.key)) { g.ok = true; if (g.failed) { g.failed = false; arc.failed--; } arc.skipped++; renderArcProgress(); return; }
+  arc.current = `Обробляю товар #${i + 1}…`; renderArcProgress();
+  try {
+    const p = await processGroup(g, publish, i);
+    known.add(g.key); g.ok = true; arc.done++;
+    if (g.failed) { g.failed = false; arc.failed--; }
+    arc.current = `Останній: «${p.title}»`;
+  } catch (e) {
+    if (e.message === 'LIMIT') { arc.log.push('⛔ Зупинено: немає місця (ліміт 1 ГБ)'); arc.stop = true; return; }
+    if (e.message === 'NO_KEY' || /API-ключ/.test(e.message)) { arc.log.push('⛔ ' + errMsg(e)); arc.stop = true; return; }
+    if (!g.failed) { g.failed = true; arc.failed++; }
+    arc.log.push(`#${i + 1}: ${errMsg(e)}`);
+  }
+  renderArcProgress();
+  await sleep(GEMINI_GAP);
+}
+async function arcWait(ms) {
+  const until = Date.now() + ms;
+  while (Date.now() < until && !arc.stop) { await sleep(500); while (arc.paused && !arc.stop) await sleep(400); }
+}
+window.arcStart = async function (retryOnly) {
   if (!arc || arc.running) return;
   if (!ls.get(LS_KEY)) return alert('Спочатку вставте API-ключ Gemini у розділі «⚙️ Налаштування»');
   arc.running = true; arc.stop = false; arc.paused = false; renderArcProgress();
@@ -1079,23 +1150,25 @@ window.arcStart = async function () {
       await setDoc(doc(importsCol, arc.importId), { mode: 'Архів', createdAt: Date.now(), count: 0, productIds: [], note: arc.name + ' · ' + arc.method });
     }
     const known = new Set(products.map(p => p.sourceKey).filter(Boolean));
-    for (; arc.pos < arc.groups.length; arc.pos++) {
-      while (arc.paused && !arc.stop) await sleep(400);
-      if (arc.stop) break;
-      const g = arc.groups[arc.pos];
-      if (g.skip) continue;
-      if (known.has(g.key)) { arc.skipped++; renderArcProgress(); continue; }
-      arc.current = `Обробляю товар #${arc.pos + 1}…`; renderArcProgress();
-      try {
-        const p = await processGroup(g, publish);
-        known.add(g.key); arc.done++; arc.current = `Останній: «${p.title}»`;
-      } catch (e) {
-        if (e.message === 'LIMIT') { arc.log.push('⛔ Зупинено: досягнуто ліміт 1 ГБ'); break; }
-        if (e.message === 'NO_KEY' || /API-ключ/.test(e.message)) { arc.log.push('⛔ ' + errMsg(e)); break; }
-        arc.failed++; arc.log.push(`#${arc.pos + 1}: ${errMsg(e)}`);
+    if (!retryOnly) {
+      for (; arc.pos < arc.groups.length; arc.pos++) {
+        while (arc.paused && !arc.stop) await sleep(400);
+        if (arc.stop) break;
+        await arcProcessOne(arc.pos, publish, known);
+        if (arc.stop) break;
       }
-      renderArcProgress();
-      await sleep(400);
+    }
+    // Автоматичний повтор невдалих (до 2 кіл), з паузою, щоб Google «охолонув»
+    for (let round = 1; round <= 2 && !arc.stop && arc.pos >= arc.groups.length; round++) {
+      const failed = arc.groups.map((g, i) => g.failed ? i : -1).filter(i => i >= 0);
+      if (!failed.length) break;
+      if (!retryOnly || round > 1) { arc.current = `⏳ Повторю невдалі (${failed.length}) через 60 с…`; renderArcProgress(); await arcWait(60000); }
+      arc.log.push(`🔁 Повтор ${round}: ${failed.length} товарів`);
+      for (const i of failed) {
+        while (arc.paused && !arc.stop) await sleep(400);
+        if (arc.stop) break;
+        await arcProcessOne(i, publish, known);
+      }
     }
   } catch (e) { onDbError(e); arc.log.push(errMsg(e)); }
   finally {
@@ -1103,17 +1176,18 @@ window.arcStart = async function () {
     try { await wake?.release(); } catch (e) {}
     renderArcProgress(); renderArcGroups();
   }
-  if (arc.pos >= arc.groups.length) toast(`Готово! Додано ${arc.done} товарів${publish ? '' : ' як чернетки — перевірте їх у «Товарах»'}`, 7000);
+  if (arc.pos >= arc.groups.length) toast(`Готово! Додано ${arc.done} товарів${arc.failed ? `, не вдалося: ${arc.failed}` : ''}`, 7000);
 };
-async function processGroup(g, publish) {
+window.arcRetry = () => window.arcStart(true);
+async function processGroup(g, publish, idx = arc.pos) {
   const imgE = g.files.filter(f => f.kind === 'image').slice(0, MAX_PHOTOS);
   const vidE = g.files.find(f => f.kind === 'video');
   if (!imgE.length) throw new Error('немає фото');
-  const big = []; for (const e of imgE) big.push(await compressImage(await e.get(), 1200, 0.8));
+  const big = []; for (const e of imgE) big.push(await compressImage(await e.get(), IMG_MAX, IMG_Q));
   let vid = null;
-  if (vidE) { const b = await vidE.get(); if (b.size <= 50 * 1048576) vid = { blob: b, name: vidE.name }; else arc.log.push(`#${arc.pos + 1}: відео більше 50 МБ — пропущено`); }
-  assertSpace(big.reduce((s, b) => s + b.size, 0) + (vid?.blob.size || 0));
-  const small = []; for (const b of big) small.push(await compressImage(b, 768, 0.7));
+  if (vidE) { const b = await vidE.get(); if (b.size <= 50 * 1048576) vid = { blob: b, name: vidE.name }; else arc.log.push(`#${idx + 1}: відео більше 50 МБ — пропущено`); }
+  await ensureSpace(big.reduce((s, b) => s + b.size, 0) + (vid?.blob.size || 0), { archive: true });
+  const small = []; for (const b of big.slice(0, AI_PHOTOS)) small.push(await compressImage(b, 768, 0.7));
   const d = aiToDraft(await analyzeProduct(small, g.text), g.text);
   d.category = resolveCategoryAuto(d.category);
   await ensureCategory(d.category);
@@ -1165,7 +1239,7 @@ function adminCard(p) {
   <div class="product-admin-card flex items-center gap-2">
     ${thumb}
     <div class="flex-1 min-w-0">
-      <div class="font-bold text-xs truncate">${esc(p.title || 'Без назви')}</div>
+      <div class="font-bold text-xs truncate">${p.pinned ? '📌 ' : ''}${esc(p.title || 'Без назви')}</div>
       <div class="text-neutral-500 text-[11px] truncate">${p.price} грн ${esc(p.priceNote)} · ${esc(p.category || '—')}</div>
       <span class="badge ${sc}">${sl}</span>
     </div>
@@ -1185,7 +1259,7 @@ function adminCard(p) {
   return `
   <div class="product-admin-card space-y-2">
     <div class="flex justify-between items-center"><span class="badge ${sc}">${sl}</span><button onclick="window.toggleEdit('${id}')" class="btn-sec sm">✓ Готово</button></div>
-    <div class="grid grid-cols-3 gap-1.5">${slots}</div>
+    <div class="grid grid-cols-4 sm:grid-cols-5 gap-1.5">${slots}</div>
     <label class="upload-slot video-slot">${p.video ? `<video src="${esc(p.video.url)}" muted playsinline preload="metadata"></video><span class="remove-x" onclick="event.preventDefault();window.removeVideo('${id}')">×</span>` : '+ Відео (до 2 хв)'}<input type="file" accept="video/*" onchange="window.uploadVideo(event,'${id}')"></label>
     <div><label class="lbl">Назва</label><input class="inp" value="${esc(p.title)}" onchange="window.setField('${id}','title',this.value)"></div>
     <div class="grid grid-cols-2 gap-2">
@@ -1202,10 +1276,12 @@ function adminCard(p) {
     </div>
     ${chipsHtml(p.filters, (gi, vi) => `window.toggleProdFilter('${id}',${gi},${vi})`)}
     <div><label class="lbl">Опис</label><textarea rows="4" class="inp" onchange="window.setField('${id}','desc',this.value)">${esc(p.desc)}</textarea></div>
+    <label class="flex items-center gap-2 text-xs min-h-[40px]"><input type="checkbox" class="w-5 h-5" ${p.pinned ? 'checked' : ''} onchange="window.setPinned('${id}',this.checked)"> 📌 Не видаляти автоматично (при нестачі місця)</label>
     ${p.source ? `<div class="text-[10px] text-neutral-400">Текст з Telegram: ${esc(p.source.slice(0, 120))}</div>` : ''}
     <button onclick="window.deleteProduct('${id}')" class="btn-del w-full">🗑 Видалити товар і його фото з хмари</button>
   </div>`;
 }
+window.setPinned = async (id, v) => { try { await patchProduct(id, { pinned: !!v }); toast(v ? '📌 Товар захищено від автоочищення' : 'Захист знято', 1800); } catch (e) {} };
 window.toggleEdit = id => { expanded.has(id) ? expanded.delete(id) : expanded.add(id); window.renderAdminProducts(); };
 window.setField = async (id, f, v) => {
   try { await patchProduct(id, { [f]: f === 'price' ? (Number(v) || 0) : v }); toast('Збережено ✓', 1200); } catch (e) {}
@@ -1252,11 +1328,7 @@ window.removeVideo = async id => {
 window.deleteProduct = async id => {
   const p = findP(id); if (!p) return;
   if (!confirm(`Видалити «${p.title || 'товар'}» назавжди?\nФото й відео теж буде видалено з хмари.`)) return;
-  try {
-    await deleteDoc(doc(productsCol, id)); expanded.delete(id);
-    for (const m of [...p.images, p.video]) await deleteMedia(m);
-    toast('Товар видалено');
-  } catch (e) { onDbError(e); }
+  try { await removeProductFully(p); toast('Товар видалено'); } catch (e) { onDbError(e); }
 };
 window.addManualProduct = async () => {
   const id = newId();
