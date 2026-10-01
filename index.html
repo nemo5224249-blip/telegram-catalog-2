@@ -141,7 +141,7 @@ body.lock{overflow:hidden}
 <div id="adminOverlay" class="fixed inset-0 bg-black/50 z-50 hidden" onclick="window.closeAdmin()"></div>
 <div id="adminPanel" class="fixed right-0 top-0 h-full w-full max-w-xl bg-white z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
   <div class="p-4 bg-brand-800 text-white flex justify-between items-center">
-    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.4</span></h2>
+    <h2 class="font-bold text-lg">Панель адміністратора <span class="text-xs font-normal opacity-70">v1.5</span></h2>
     <button onclick="window.closeAdmin()" class="text-xl font-bold w-10 h-10">&times;</button>
   </div>
   <div class="p-3 sm:p-5 flex-1 overflow-y-auto space-y-3" style="padding-bottom:calc(2rem + env(safe-area-inset-bottom,0px))">
@@ -342,7 +342,7 @@ body.lock{overflow:hidden}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const firebaseConfig = {
@@ -442,7 +442,15 @@ function normalizeProduct(p) {
 /* ---------- Підключення до бази ---------- */
 onSnapshot(settingsRef, async snap => {
   if (!snap.exists()) {
-    try { await setDoc(settingsRef, { ...DEFAULT_SETTINGS, productsMigrated: true }); } catch (e) { onDbError(e); }
+    // ЗАХИСТ: якщо інтернет «моргнув», браузер може на мить вирішити, що налаштувань немає.
+    // Раніше в цей момент записувалися стандартні налаштування поверх справжніх. Тепер — лише після перевірки на сервері.
+    if (snap.metadata.fromCache) return;
+    try {
+      const fresh = await getDocFromServer(settingsRef);
+      if (fresh.exists()) return;
+      if (products.length) return; // товари є — значить магазин не новий, нічого не перезаписуємо
+      await setDoc(settingsRef, { ...DEFAULT_SETTINGS, productsMigrated: true });
+    } catch (e) { onDbError(e); }
     return;
   }
   const d = snap.data();
