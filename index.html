@@ -5,6 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#59423a">
 <title id="pageTitle">Fashion Стиль — Інтернет-магазин одягу</title>
+<meta name="description" content="Інтернет-магазин сучасного одягу та аксесуарів. Нові колекції, швидке замовлення в Telegram.">
+<!-- Прев'ю посилання у Facebook / Instagram / Telegram (Facebook не виконує JS, тому лише статичні теги) -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="uk_UA">
+<meta property="og:site_name" content="Fashion Стиль">
+<meta property="og:title" content="Fashion Стиль — Інтернет-магазин одягу">
+<meta property="og:description" content="Нові колекції одягу та аксесуарів. Замовлення в Telegram.">
+<meta property="og:url" content="https://nemo5224249-blip.github.io/telegram-catalog-2/">
+<!-- Картинка прев'ю = фото банера. Якщо зміните банер в адмінці — старе фото видалиться, і цю адресу треба оновити -->
+<meta property="og:image" content="https://firebasestorage.googleapis.com/v0/b/premium-luxe-shop.firebasestorage.app/o/branding%2F1790884561903_31zud6.jpg?alt=media&amp;token=a82d426f-3b81-48bd-bfb0-026245d8c3a2">
+<link rel="canonical" href="https://nemo5224249-blip.github.io/telegram-catalog-2/">
+<!-- ВСТАВТЕ код підтвердження домену з Meta Business Suite → Безпека бренду → Домени:
+<meta name="facebook-domain-verification" content="..." />
+-->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = { theme: { extend: { colors: { brand: { 50:'#fdf8f6',100:'#f2e8e5',600:'#8c6d62',700:'#73574d',800:'#59423a',900:'#402e28' } } } } };
@@ -69,7 +83,7 @@ body.lock{overflow:hidden}
 .warn.danger{background:#fee2e2;border-color:#fca5a5;color:#991b1b}
 .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-top:3px}
 .history-item{border:1px solid #e5e5e5;border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;font-size:12px}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#262626;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:100;max-width:90vw;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#262626;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:100;max-width:90vw;text-align:center;white-space:pre-line;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 </style>
 </head>
@@ -150,6 +164,17 @@ body.lock{overflow:hidden}
   <button onclick="window.toggleCartDrawer()" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">🛒</span>Кошик</button>
   <button onclick="window.toggleInfoMenu(true)" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">ℹ️</span>Інфо</button>
   <button onclick="window.openTelegram()" class="flex flex-col items-center text-neutral-600 text-[10px] min-h-[44px] justify-center px-3"><span class="text-base">💬</span>Telegram</button>
+</div>
+
+<!-- ВХІД В АДМІНКУ (Firebase Auth) -->
+<div id="loginModal" class="fixed inset-0 bg-black/60 z-[70] hidden flex items-center justify-center p-3" onclick="if(event.target===this)window.closeLogin()">
+  <form onsubmit="event.preventDefault();window.doLogin()" class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-3 shadow-2xl">
+    <div class="font-bold text-base">🔐 Вхід адміністратора</div>
+    <div><label class="lbl">Email</label><input id="loginEmail" type="email" autocomplete="username" class="inp" required></div>
+    <div><label class="lbl">Пароль</label><input id="loginPass" type="password" autocomplete="current-password" class="inp" required></div>
+    <div id="loginErr" class="text-xs text-rose-600"></div>
+    <div class="flex gap-2"><button type="submit" id="loginBtn" class="btn-main flex-1">Увійти</button><button type="button" onclick="window.closeLogin()" class="btn-sec flex-1">Скасувати</button></div>
+  </form>
 </div>
 
 <!-- ===================== АДМІН-ПАНЕЛЬ ===================== -->
@@ -288,6 +313,7 @@ body.lock{overflow:hidden}
         <div><label class="lbl">Назва магазину</label><input id="setStoreName" class="inp"></div>
         <div><label class="lbl">Telegram для замовлень (без @)</label><input id="setTelegram" class="inp"></div>
         <div><label class="lbl">Логотип</label><input type="file" id="setLogo" accept="image/*" class="file-inp"></div>
+        <div><label class="lbl">📈 Meta Pixel ID (реклама Facebook / Instagram) — лише цифри, з Events Manager</label><input id="setPixel" class="inp" inputmode="numeric" placeholder="напр. 1234567890123456"></div>
         <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="setAllowNew" class="w-5 h-5"> Gemini може сам створювати нові категорії</label>
         <div><label class="lbl">📝 Опис для Gemini — ваші постійні побажання до назв і описів нових товарів</label>
           <textarea id="setGeminiInstr" rows="4" maxlength="2000" class="inp" placeholder="Напр.: пиши коротко, 2–3 речення, без назв брендів, в кінці додай про бережний догляд"></textarea></div>
@@ -405,6 +431,7 @@ body.lock{overflow:hidden}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { initializeFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDc-8E2Sqzp27PPnNf9MYys9aaapD9N2xk",
@@ -419,6 +446,7 @@ const app = initializeApp(firebaseConfig);
 // Нова версія бібліотеки + запасний режим з'єднання: якщо основний канал не працює, браузер сам перейде на повільніший, але надійний
 const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
 const storage = getStorage(app);
+const auth = getAuth(app);   // адмін входить через Firebase (email + пароль); права перевіряє сервер за правилами Firestore/Storage
 const settingsRef = doc(db, 'catalog', 'fashionStyleData');   // налаштування (як і раніше)
 const statsRef = doc(db, 'catalog', 'storageStats');
 const countersRef = doc(db, 'catalog', 'skuCounters');     // лічильники автоматичних артикулів          // лічильник зайнятого місця
@@ -426,7 +454,6 @@ const productsCol = collection(db, 'products');               // кожен то
 const importsCol = collection(db, 'imports');                 // історія імпортів
 
 /* ---------- Константи ---------- */
-const ADMIN_HASH = '05d50cf358ae70e7c9aa5fe49b6bfcaf353037f40e61083ce95c1c801c548e4f'; // SHA-256 пароля
 const STORAGE_LIMIT = 1024 * 1024 * 1024; // 1 ГБ
 const MAX_PHOTOS = 10;
 const AI_PHOTOS = 6; // скільки фото відправляти в Gemini для аналізу
@@ -448,9 +475,11 @@ const DEFAULT_PAGES = [
   { id: 'pg3', slug: 'obmin', title: 'Обмін і повернення', image: null,
     body: 'Тут опишіть умови обміну та повернення товару.\n\n✏️ Змінити цей текст: адмін-панель → «📄 Сторінки».' }
 ];
+const PRIVACY_PAGE = { id: 'pgPrivacy', slug: 'privacy', title: 'Політика конфіденційності', image: null,
+  body: '**Які дані ми збираємо**\nСайт не просить реєстрації і не зберігає ваші ім\'я, телефон чи адресу. Замовлення оформлюється в Telegram — там ви самі вирішуєте, які дані надати продавцю.\n\n**Файли cookie та аналітика**\nМи використовуємо Meta Pixel (Facebook / Instagram), щоб вимірювати ефективність реклами та показувати релевантні оголошення. Pixel може зберігати cookie і передавати в Meta дані про відвідування сторінок і дії на сайті (перегляд товару, додавання в кошик). Також ведеться анонімна статистика відвідувань без особистих даних.\n\n**Як відмовитися**\nВи можете вимкнути персоналізовану рекламу в налаштуваннях реклами Facebook / Instagram або заблокувати cookie в браузері.\n\n**Контакти**\nЗ питань щодо даних пишіть нам у Telegram.' };
 const SKU_DIGITS = 5;
 const DEFAULT_SETTINGS = {
-  geminiInstructions: '', catCodes: {}, pages: DEFAULT_PAGES,
+  geminiInstructions: '', catCodes: {}, pages: [...DEFAULT_PAGES, PRIVACY_PAGE], privacyAdded: true, metaPixelId: '',
   storeName: 'Fashion Стиль', storeLogo: null, telegram: 'yuli666666',
   categories: ['Жіночий одяг', 'Чоловічий одяг', 'Верхній одяг', 'Взуття', 'Аксесуари'],
   filterGroups: [], allowNewCategories: true,
@@ -532,7 +561,7 @@ onSnapshot(settingsRef, async snap => {
   settings.banner = { ...DEFAULT_SETTINGS.banner, ...(d.banner || {}) };
   settings.filterGroups = (d.filterGroups || []).filter(g => g && g.name !== 'Розмір').map(g => ({ name: g.name, values: g.values || g.options || [] }));
   delete settings.products; delete settings.sizes;
-  settingsLoaded = true; setConn(true);
+  settingsLoaded = true; setConn(true); initPixel();
   if (Array.isArray(d.products) && d.products.length && !d.productsMigrated) migrateLegacy(d.products);
   if (!Array.isArray(settings.pages)) settings.pages = clone(DEFAULT_PAGES);
   renderStore();
@@ -543,15 +572,22 @@ onSnapshot(settingsRef, async snap => {
 onSnapshot(productsCol, snap => {
   products = snap.docs.map(d => ({ ...normalizeProduct(d.data()), _id: d.id }));
   products.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  const firstLoad = !productsLoaded;
   productsLoaded = true;
   renderStore();
+  if (firstLoad && hashChecked && location.hash.startsWith('#p-')) openPageFromHash();  // якщо налаштування прийшли раніше за товари
   if (isAdmin) { window.renderAdminProducts(); renderHistory(); }
 }, onDbError);
 
-onSnapshot(importsCol, snap => {
-  imports = snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  if (isAdmin) renderHistory();
-}, onDbError);
+// Історія імпортів доступна лише адміну — підписуємося після входу
+let importsSub = null;
+function subscribeImports() {
+  if (importsSub) return;
+  importsSub = onSnapshot(importsCol, snap => {
+    imports = snap.docs.map(d => ({ ...d.data(), id: d.id })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    if (isAdmin) renderHistory();
+  }, onDbError);
+}
 
 onSnapshot(statsRef, s => {
   statsLoaded = true; statsExists = s.exists();
@@ -580,7 +616,7 @@ async function migrateLegacy(list) {
 const dayKey = (d = new Date()) => d.toLocaleDateString('sv-SE');         // 2026-10-01 за місцевим часом
 const statDayRef = k => doc(db, 'catalog', 'stat-' + k);
 const statTotalRef = doc(db, 'catalog', 'stat-total');
-const isAdminDevice = () => ls.get(LS_ADMIN) === ADMIN_HASH;              // свої кліки не рахуємо
+const isAdminDevice = () => !!ls.get(LS_ADMIN);                          // свої кліки не рахуємо (позначка ставиться при вході)
 const safeKey = k => String(k ?? '').replace(/[.~*\/\[\]`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
 let statTotal = null, statPeriod = 7, lastFound = -1, searchTimer = null;
 function track(field, key) {
@@ -599,6 +635,29 @@ function track(field, key) {
   if (ls.get(k)) return;
   ls.set(k, '1'); track('visitors');
 })();
+
+/* ---------- Реклама: Meta Pixel, мітки UTM ---------- */
+const IN_APP = /FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent);   // вбудований браузер Facebook / Instagram
+let pixelOn = false;
+function initPixel() {
+  const id = String(settings.metaPixelId || '').replace(/\D/g, '');
+  if (pixelOn || !id || isAdminDevice()) return;           // свої кліки в рекламну статистику не шлемо
+  pixelOn = true;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;
+  s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', id); fbq('track', 'PageView');
+}
+function fb(event, params) { if (pixelOn && window.fbq) try { fbq('track', event, params); } catch (e) {} }
+const fbItem = p => ({ content_ids: [p.sku || p._id || p.id], content_name: p.title, content_type: 'product', value: Number(p.price) || 0, currency: 'UAH' });
+
+// Звідки прийшов покупець (?utm_source=facebook&utm_campaign=...) — запам'ятовуємо на сесію і дописуємо в замовлення
+const adSource = (() => {
+  const q = new URLSearchParams(location.search);
+  const src = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'].map(k => q.get(k)).filter(Boolean).join(' / ').slice(0, 120);
+  try { if (src) sessionStorage.setItem('fs_src', src); return src || sessionStorage.getItem('fs_src') || ''; } catch (e) { return src; }
+})();
+try { if (adSource && !sessionStorage.getItem('fs_src_counted')) { sessionStorage.setItem('fs_src_counted', '1'); track('sources', adSource); } } catch (e) {}
 
 /* ---------- Артикули ---------- */
 const LETTERS = s => (String(s).toUpperCase().match(/[A-ZА-ЯІЇЄҐЁ]/g) || []);
@@ -793,21 +852,39 @@ function renderStorage() {
     : pct >= 80 ? '<div class="warn">⚠️ Зайнято понад 80% безкоштовного ліміту.</div>' : '';
 }
 
-/* ---------- Вхід в адмінку (запам'ятовує пристрій) ---------- */
-async function sha256(t) {
-  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
-  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
-}
-window.requestAdminAccess = async function () {
-  if (ls.get(LS_ADMIN) === ADMIN_HASH) { isAdmin = true; openAdmin(); return; }
-  const pwd = prompt('Введіть пароль адміністратора:');
-  if (pwd === null) return;
-  if (await sha256(pwd.trim()) === ADMIN_HASH) { ls.set(LS_ADMIN, ADMIN_HASH); isAdmin = true; openAdmin(); }
-  else alert('Невірний пароль!');
+/* ---------- Вхід в адмінку (Firebase Auth, пристрій запам'ятовується) ---------- */
+let authReady = false;
+onAuthStateChanged(auth, user => {
+  authReady = true;
+  isAdmin = !!user;
+  if (user) { ls.set(LS_ADMIN, '1'); subscribeImports(); }
+  else if (!$('adminPanel').classList.contains('translate-x-full')) window.closeAdmin();
+});
+window.requestAdminAccess = function () {
+  if (auth.currentUser) { isAdmin = true; openAdmin(); return; }
+  if (!authReady) return toast('Зачекайте секунду і натисніть ще раз');
+  $('loginErr').textContent = ''; $('loginPass').value = '';
+  $('loginModal').classList.remove('hidden'); setTimeout(() => $('loginEmail').focus(), 50);
 };
-window.logoutDevice = function () {
+window.closeLogin = () => $('loginModal').classList.add('hidden');
+window.doLogin = async function () {
+  const btn = $('loginBtn'); btn.disabled = true; $('loginErr').textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, $('loginEmail').value.trim(), $('loginPass').value);
+    window.closeLogin(); isAdmin = true; openAdmin();
+  } catch (e) {
+    const c = e?.code || '';
+    $('loginErr').textContent = /invalid-credential|wrong-password|user-not-found|invalid-email/.test(c) ? 'Невірний email або пароль'
+      : c.includes('too-many-requests') ? 'Забагато спроб. Спробуйте пізніше'
+      : c.includes('operation-not-allowed') ? 'Вхід за email вимкнено в Firebase (Authentication → Sign-in method)'
+      : 'Помилка входу: ' + (e?.message || c);
+  } finally { btn.disabled = false; }
+};
+window.logoutDevice = async function () {
   if (!confirm('Вийти з адмінки на цьому пристрої? Наступного разу знадобиться пароль.')) return;
-  ls.del(LS_ADMIN); isAdmin = false; window.closeAdmin(); toast('Ви вийшли з адмінки');
+  window.closeAdmin(); isAdmin = false;
+  try { await signOut(auth); } catch (e) {}
+  ls.del(LS_ADMIN); toast('Ви вийшли з адмінки');
 };
 function lockBody() {
   const open = !$('adminPanel').classList.contains('translate-x-full') || !$('cartDrawer').classList.contains('translate-x-full');
@@ -850,7 +927,8 @@ window.loadStats = async period => {
     const agg = statPeriod === 0 ? statTotal : {
       visitors: ds.reduce((s, d) => s + (Number(d.visitors) || 0), 0),
       views: sumMaps(ds, 'views'), carts: sumMaps(ds, 'carts'), cats: sumMaps(ds, 'cats'),
-      search: sumMaps(ds, 'search'), searchMiss: sumMaps(ds, 'searchMiss'), pages: sumMaps(ds, 'pages')
+      search: sumMaps(ds, 'search'), searchMiss: sumMaps(ds, 'searchMiss'), pages: sumMaps(ds, 'pages'),
+      sources: sumMaps(ds, 'sources'), orders: ds.reduce((s, d) => s + (Number(d.orders) || 0), 0)
     };
     renderStats(agg, days);
     window.renderAdminProducts();
@@ -868,8 +946,9 @@ function renderStats(a, days) {
       return `<div class="flex-1 rounded-t" style="background:#73574d;height:${v ? Math.max(4, v / maxDay * 100) : 1}%" title="${d.key}: ${v}"></div>`; }).join('')}</div>
     <div class="flex justify-between text-[10px] text-neutral-400 mt-0.5"><span>${days[0].key.slice(5)}</span><span>${days[days.length - 1].key.slice(5)}</span></div></div>` : '';
   $('statBody').innerHTML = `
-    <div class="grid grid-cols-3 gap-2">${box(Number(a.visitors) || 0, '👥 відвідувачів')}${box(sumObj(views), '👁 переглядів товарів')}${box(sumObj(carts), '🛒 у кошик')}</div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">${box(Number(a.visitors) || 0, '👥 відвідувачів')}${box(sumObj(views), '👁 переглядів товарів')}${box(sumObj(carts), '🛒 у кошик')}${box(Number(a.orders) || 0, '✈️ замовлень у Telegram')}</div>
     ${chart}
+    <div><div class="font-bold text-xs text-neutral-800 mb-1">📣 Джерела реклами (utm-мітки)</div>${barRows(topList(a.sources, 10), esc)}</div>
     <div><div class="font-bold text-xs text-neutral-800 mb-1">🏆 ТОП-20 товарів</div>
       ${top.map((x, i) => `<div class="flex items-center gap-2 bg-white border rounded-lg p-1.5 mb-1">
         <span class="text-[11px] w-5 text-neutral-400 text-center">${i + 1}</span>
@@ -894,6 +973,12 @@ function openAdmin() {
   window.renderAdminProducts(true); renderHistory(); renderStorage(); renderAdminPages(); window.setImportTab(importTab);
   if (statsLoaded && !statsExists) window.recountStorage();
   applyAdminSize();
+  // Одноразово додаємо сторінку «Політика конфіденційності» в існуючий магазин (потрібна для Meta Pixel)
+  if (settingsLoaded && !settings.privacyAdded) {
+    settings.privacyAdded = true;
+    if (!pagesList().some(p => p.slug === 'privacy')) settings.pages = [...pagesList(), clone(PRIVACY_PAGE)];
+    saveSettings().then(() => { renderAdminPages(); renderPagesLinks(); toast('Додано сторінку «Політика конфіденційності» — перевірте текст'); }).catch(() => {});
+  }
   getDoc(statTotalRef).then(t => { statTotal = t.exists() ? t.data() : {}; window.renderAdminProducts(); }).catch(() => {});
   if ($('secStats').open) window.loadStats();
 }
@@ -904,6 +989,7 @@ window.closeAdmin = function () {
 function fillAdminForms() {
   $('setStoreName').value = settings.storeName || '';
   $('setTelegram').value = settings.telegram || '';
+  $('setPixel').value = settings.metaPixelId || '';
   $('setAllowNew').checked = settings.allowNewCategories !== false;
   $('setGeminiInstr').value = settings.geminiInstructions || '';
   $('setGeminiKey').value = ls.get(LS_KEY);
@@ -1558,10 +1644,17 @@ function adminCard(p) {
     ${chipsHtml(p.filters, (gi, vi) => `window.toggleProdFilter('${id}',${gi},${vi})`)}
     <div><label class="lbl">Опис</label><textarea rows="4" class="inp" onchange="window.setField('${id}','desc',this.value)">${esc(p.desc)}</textarea></div>
     <label class="flex items-center gap-2 text-xs min-h-[40px]"><input type="checkbox" class="w-5 h-5" ${p.pinned ? 'checked' : ''} onchange="window.setPinned('${id}',this.checked)"> 📌 Не видаляти автоматично (при нестачі місця)</label>
+    <button onclick="window.copyAdLink('${id}')" class="btn-sec w-full sm">🔗 Скопіювати посилання на товар для реклами</button>
     ${p.source ? `<div class="text-[10px] text-neutral-400">Текст з Telegram: ${esc(p.source.slice(0, 120))}</div>` : ''}
     <button onclick="window.deleteProduct('${id}')" class="btn-del w-full">🗑 Видалити товар і його фото з хмари</button>
   </div>`;
 }
+window.copyAdLink = async id => {
+  const p = findP(id); if (!p) return;
+  const url = `${location.origin}${location.pathname}?utm_source=facebook&utm_medium=paid&utm_campaign=${encodeURIComponent(p.sku || 'product')}#p-${id}`;
+  const warn = p.status !== 'published' ? '\n⚠️ Товар не опублікований — покупці його не побачать!' : '';
+  try { await navigator.clipboard.writeText(url); toast('🔗 Посилання скопійовано' + warn, warn ? 4000 : 2600); } catch (e) { prompt('Скопіюйте посилання:' + warn, url); }
+};
 window.setPinned = async (id, v) => { try { await patchProduct(id, { pinned: !!v }); toast(v ? '📌 Товар захищено від автоочищення' : 'Захист знято', 1800); } catch (e) {} };
 window.toggleEdit = id => { expanded.has(id) ? expanded.delete(id) : expanded.add(id); window.renderAdminProducts(); };
 window.setField = async (id, f, v) => {
@@ -1687,6 +1780,9 @@ window.saveStoreSettings = async () => {
   settings.storeName = $('setStoreName').value.trim() || settings.storeName;
   settings.telegram = $('setTelegram').value.trim().replace(/^@/, '') || settings.telegram;
   settings.allowNewCategories = $('setAllowNew').checked;
+  const px = $('setPixel').value.replace(/\D/g, '');
+  if ($('setPixel').value.trim() && !px) return alert('Pixel ID — це лише цифри');
+  settings.metaPixelId = px;
   settings.geminiInstructions = $('setGeminiInstr').value.trim().slice(0, 2000);
   const f = $('setLogo').files[0];
   try {
@@ -1863,6 +1959,11 @@ window.closePage = () => {
 function openPageFromHash() {
   const slug = decodeURIComponent(location.hash.slice(1));
   if (!slug) { if (!$('pageView').classList.contains('hidden')) hidePage(); return; }
+  if (slug.startsWith('p-')) {                       // посилання на товар з реклами: сайт/#p-<id>
+    const pr = findP(slug.slice(2));
+    if (pr && visible(pr)) { window.openProductModal(pr._id); return; }
+    if (!productsLoaded) return;                     // товари ще вантажаться — відкриємо після завантаження
+  }
   const p = pagesList().find(x => x.slug === slug);
   if (p) window.openPage(p.id, true);
 }
@@ -1941,7 +2042,7 @@ function applyBranding() {
   $('checkoutBtn').textContent = `✈️ Оформити замовлення в Telegram (@${tg})`;
   $('footerCopy').textContent = `© ${new Date().getFullYear()} ${name}. Замовлення приймаються в Telegram.`;
 }
-window.openTelegram = () => window.open(`https://t.me/${settings.telegram || 'yuli666666'}`, '_blank');
+window.openTelegram = () => { fb('Contact'); goTelegram(`https://t.me/${settings.telegram || 'yuli666666'}`); };
 function renderBanner() {
   const b = settings.banner;
   $('bannerSection').classList.toggle('hidden', b.enabled === false);
@@ -2003,7 +2104,7 @@ $('searchInput').addEventListener('input', () => {
   searchTimer = setTimeout(() => {               // рахуємо, коли людина закінчила друкувати
     const q = $('searchInput').value.trim().toLowerCase();
     if (q.length < 2) return;
-    track('search', q);
+    track('search', q); fb('Search', { search_string: q });
     if (lastFound === 0) track('searchMiss', q);
   }, 1500);
 });
@@ -2029,7 +2130,8 @@ function productCard(p) {
 }
 window.openProductModal = function (id) {
   const p = findP(id); if (!p) return;
-  track('views', p._id);
+  track('views', p._id); fb('ViewContent', fbItem(p));
+  if (location.hash !== '#p-' + p._id) history.replaceState(null, '', location.pathname + location.search + '#p-' + p._id);  // посиланням можна поділитися
   const media = [...p.images.map(m => ({ type: 'image', url: m.url })), ...(p.video ? [{ type: 'video', url: p.video.url }] : [])];
   window.currentModalMedia = media;
   const first = media[0];
@@ -2061,7 +2163,10 @@ function mediaHtml(m) {
   return m.type === 'video' ? `<video src="${esc(m.url)}" controls playsinline class="w-full h-full object-contain bg-black"></video>` : `<img src="${esc(m.url)}" class="w-full h-full object-cover">`;
 }
 window.selectModalMedia = i => { const m = (window.currentModalMedia || [])[i]; if (m) $('mainModalMedia').innerHTML = mediaHtml(m); };
-window.closeProductModal = () => { $('productModal').classList.add('hidden'); document.querySelectorAll('#modalContent video').forEach(v => v.pause()); };
+window.closeProductModal = () => {
+  $('productModal').classList.add('hidden'); document.querySelectorAll('#modalContent video').forEach(v => v.pause());
+  if (location.hash.startsWith('#p-')) history.replaceState(null, '', location.pathname + location.search);
+};
 window.toggleMobileFilters = () => {
   const c = $('filterContent'); c.classList.toggle('hidden');
   $('filterToggleIcon').innerText = c.classList.contains('hidden') ? '▼' : '▲';
@@ -2071,7 +2176,7 @@ window.toggleMobileFilters = () => {
 window.toggleCartDrawer = () => { $('cartDrawer').classList.toggle('translate-x-full'); $('cartOverlay').classList.toggle('hidden'); lockBody(); renderCart(); };
 window.addToCart = id => {
   const p = findP(id); if (!p) return;
-  track('carts', p._id);
+  track('carts', p._id); fb('AddToCart', fbItem(p));
   const ex = cart.find(x => x.id === id);
   if (ex) ex.qty++; else cart.push({ id, title: p.title, sku: p.sku || '', price: p.price, priceNote: p.priceNote, img: p.images[0]?.url || '', qty: 1 });
   updateCartBadge(); window.toggleCartDrawer();
@@ -2081,7 +2186,10 @@ window.updateCartQty = (id, d) => {
   if (it) { it.qty += d; if (it.qty <= 0) cart = cart.filter(i => i.id !== id); }
   updateCartBadge(); renderCart();
 };
-function updateCartBadge() { $('cartBadge').innerText = cart.reduce((s, i) => s + i.qty, 0); }
+// Кошик зберігається на пристрої: людина з реклами може повернутися пізніше
+function updateCartBadge() { $('cartBadge').innerText = cart.reduce((s, i) => s + i.qty, 0); ls.set('fs_cart', JSON.stringify(cart)); }
+try { const c = JSON.parse(ls.get('fs_cart') || '[]'); if (Array.isArray(c)) cart = c.filter(i => i && i.id && i.qty > 0); } catch (e) {}
+updateCartBadge();
 function renderCart() {
   const box = $('cartItemsContainer');
   if (!cart.length) { box.innerHTML = '<p class="text-neutral-500 text-center py-8 text-xs">Кошик порожній</p>'; $('cartTotalPrice').innerText = '0 грн'; return; }
@@ -2103,9 +2211,22 @@ window.checkoutTelegram = () => {
   let msg = `🛍 Замовлення у магазині "${settings.storeName}":\n\n`, total = 0;
   cart.forEach(it => { msg += `- ${it.title}${it.sku ? ` [арт. ${it.sku}]` : ''} (${it.qty} шт.) — ${it.price * it.qty} грн ${it.priceNote}\n`; total += it.price * it.qty; });
   msg += `\nЗагальна сума: ${total} грн`;
-  window.open(`https://t.me/${settings.telegram || 'yuli666666'}?text=${encodeURIComponent(msg)}`, '_blank');
+  if (adSource) msg += `\n\nДжерело: ${adSource}`;
+  const items = cart.map(it => ({ id: it.sku || it.id, quantity: it.qty }));
+  fb('InitiateCheckout', { contents: items, content_ids: items.map(i => i.id), content_type: 'product', num_items: cart.reduce((s, i) => s + i.qty, 0), value: total, currency: 'UAH' });
+  fb('Lead', { value: total, currency: 'UAH' });   // замовлення йде в Telegram, тому «покупка» на сайті не фіксується — оптимізуйте рекламу на Lead
+  track('orders');
+  // Копія тексту — якщо Telegram відкриється без нього (буває у вбудованому браузері Instagram/Facebook)
+  try { navigator.clipboard?.writeText(msg).catch(() => {}); } catch (e) {}
+  const url = `https://t.me/${settings.telegram || 'yuli666666'}?text=${encodeURIComponent(msg)}`;
   cart = []; updateCartBadge(); renderCart(); window.toggleCartDrawer();
+  toast('Текст замовлення скопійовано — якщо чат відкриється порожнім, просто вставте його', 6000);
+  goTelegram(url);
 };
+// У вбудованому браузері Facebook/Instagram нові вкладки часто блокуються — переходимо в цій же (з паузою, щоб Pixel встиг надіслати подію)
+function goTelegram(url) {
+  if (IN_APP || !window.open(url, '_blank')) setTimeout(() => { location.href = url; }, 400);
+}
 
 renderStore();
 </script>
