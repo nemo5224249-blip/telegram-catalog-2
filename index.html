@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#59423a">
 <title id="pageTitle">Fashion Стиль — Інтернет-магазин одягу</title>
-<meta name="description" content="Інтернет-магазин сучасного одягу та аксесуарів. Нові колекції, швидке замовлення в Telegram.">
+<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2373574d'/%3E%3Ctext x='32' y='45' font-size='38' font-family='Arial,sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E"><meta name="description" content="Інтернет-магазин сучасного одягу та аксесуарів. Нові колекції, швидке замовлення в Telegram.">
 <!-- Прев'ю посилання у Facebook / Instagram / Telegram (Facebook не виконує JS, тому лише статичні теги) -->
 <meta property="og:type" content="website">
 <meta property="og:locale" content="uk_UA">
@@ -2035,10 +2035,22 @@ function applyBranding() {
   $('pageTitle').innerText = name + ' — Інтернет-магазин одягу';
   const logo = settings.storeLogo?.url ? `<img src="${esc(settings.storeLogo.url)}" class="w-full h-full object-cover" alt="">` : esc(name[0] || 'F');
   $('headerLogoIcon').innerHTML = logo; $('footerLogoIcon').innerHTML = logo;
+  setFavicon(name);
   const tg = settings.telegram || 'yuli666666';
   $('footerTg').href = `https://t.me/${tg}`; $('footerTg').textContent = `Telegram: @${tg}`;
   $('checkoutBtn').textContent = `✈️ Оформити замовлення в Telegram (@${tg})`;
   $('footerCopy').textContent = `© ${new Date().getFullYear()} ${name}. Замовлення приймаються в Telegram.`;
+}
+// Іконка у вкладці браузера та на робочому столі телефону: логотип магазину або перша літера назви
+function setFavicon(name) {
+  const letter = esc((name || 'F')[0].toUpperCase());
+  const href = settings.storeLogo?.url || 'data:image/svg+xml,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#73574d"/><text x="32" y="45" font-size="38" font-family="Arial,sans-serif" font-weight="bold" fill="white" text-anchor="middle">${letter}</text></svg>`);
+  if ($('favicon').href === href) return;
+  $('favicon').href = href;
+  let t = document.querySelector('link[rel="apple-touch-icon"]');
+  if (settings.storeLogo?.url) { if (!t) { t = document.createElement('link'); t.rel = 'apple-touch-icon'; document.head.appendChild(t); } t.href = href; }
+  else if (t) t.remove();
 }
 window.openTelegram = () => { fb('Contact'); goTelegram(`https://t.me/${settings.telegram || 'yuli666666'}`); };
 function renderBanner() {
@@ -2153,8 +2165,23 @@ window.openProductModal = function (id) {
         ${rows}
       </div>
     </div>
-    <button onclick="window.addToCart('${id}'); window.closeProductModal();" class="w-full py-3 bg-brand-700 text-white rounded-xl font-bold text-xs min-h-[48px]">Додати в кошик</button>`;
+    <div class="flex gap-2">
+      <button onclick="window.addToCart('${id}'); window.closeProductModal();" class="flex-1 py-3 bg-brand-700 text-white rounded-xl font-bold text-xs min-h-[48px]">Додати в кошик</button>
+      <button onclick="window.shareProduct('${id}')" class="btn-sec" style="min-height:48px;border-radius:12px" title="Поділитися">📤 Поділитися</button>
+    </div>`;
   $('productModal').classList.remove('hidden');
+};
+// Поділитися товаром: на телефоні відкриває меню (Telegram, Viber, Instagram…), на комп'ютері копіює посилання
+window.shareProduct = async id => {
+  const p = findP(id); if (!p) return;
+  const url = `${location.origin}${location.pathname}?utm_source=share#p-${p._id}`;
+  const text = `${p.title} — ${p.price} грн${p.priceNote ? ' ' + p.priceNote : ''}`;
+  if (navigator.share) {
+    try { await navigator.share({ title: p.title, text, url }); return; }
+    catch (e) { if (e?.name === 'AbortError') return; }   // людина закрила меню — нічого не робимо
+  }
+  try { await navigator.clipboard.writeText(`${text}\n${url}`); toast('🔗 Посилання на товар скопійовано'); }
+  catch (e) { prompt('Скопіюйте посилання:', url); }
 };
 function mediaHtml(m) {
   if (!m) return '<span class="text-4xl text-neutral-300">📦</span>';
