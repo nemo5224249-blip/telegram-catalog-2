@@ -425,11 +425,18 @@ body.lock{overflow:hidden}
 
 <div id="toast" class="hidden"></div>
 
+<script>
+// Швидкий старт: перші товари запитуємо одразу, паралельно із завантаженням бібліотеки Firebase (вона важка)
+window.__pre = fetch('https://firestore.googleapis.com/v1/projects/premium-luxe-shop/databases/(default)/documents:runQuery', {
+  method: 'POST', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'products' }], orderBy: [{ field: { fieldPath: 'createdAt' }, direction: 'DESCENDING' }], limit: 30 } })
+}).then(r => r.ok ? r.json() : null).catch(() => null);
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-import { initializeFirestore, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-storage.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, setDoc, updateDoc, deleteDoc, writeBatch, increment, arrayUnion, getDocFromServer, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+// Бібліотеки входу і сховища фото потрібні лише адміну — вантажимо їх тільки коли треба (покупцям сайт відкривається швидше)
+const FB = 'https://www.gstatic.com/firebasejs/12.19.0/';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDc-8E2Sqzp27PPnNf9MYys9aaapD9N2xk",
@@ -442,9 +449,14 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 // Нова версія бібліотеки + запасний режим з'єднання: якщо основний канал не працює, браузер сам перейде на повільніший, але надійний
-const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true });
-const storage = getStorage(app);
-const auth = getAuth(app);   // адмін входить через Firebase (email + пароль); права перевіряє сервер за правилами Firestore/Storage
+// Кеш на пристрої: при повторному відкритті товари показуються одразу, а свіжі дані підтягуються у фоні
+// (якщо браузер не дає сховище — наприклад, приватний режим — Firebase сам працює без кешу)
+const db = initializeFirestore(app, { experimentalAutoDetectLongPolling: true, localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+let storageLib = null;
+async function stor() {
+  if (!storageLib) { const m = await import(FB + 'firebase-storage.js'); storageLib = { ...m, storage: m.getStorage(app) }; }
+  return storageLib;
+}
 const settingsRef = doc(db, 'catalog', 'fashionStyleData');   // налаштування (як і раніше)
 const statsRef = doc(db, 'catalog', 'storageStats');
 const countersRef = doc(db, 'catalog', 'skuCounters');     // лічильники автоматичних артикулів          // лічильник зайнятого місця
@@ -501,6 +513,10 @@ const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const mb = b => ((b || 0) / 1048576).toFixed(1);
+// Зменшена копія фото «на льоту» (безкоштовний сервіс wsrv.nl, формат WebP): картка 400 px ≈ 25 КБ замість ~150 КБ.
+// Якщо сервіс не відповість — браузер сам підставить оригінал (onerror).
+const small = (url, w) => url && url.includes('firebasestorage.googleapis.com') ? `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${w}&output=webp&q=75` : url;
+const imgTag = (url, w, attrs) => `<img src="${esc(small(url, w))}" onerror="if(this.src!==this.dataset.o){this.src=this.dataset.o}" data-o="${esc(url)}" decoding="async" ${attrs}>`;
 const newId = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const ls = {
   get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
@@ -509,7 +525,7 @@ const ls = {
 };
 const visible = p => !p.status || p.status === 'published';
 const fmtDate = t => new Date(t).toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-const findP = id => products.find(p => p._id === id);
+const findP = id => products.find(p => p._id === id) || (!productsLoaded && preview ? preview.find(p => p._id === id) : undefined);
 const errMsg = e => e?.message === 'NO_KEY' ? 'Немає API-ключа Gemini (розділ «Налаштування»)' : e?.message === 'LIMIT' ? 'Досягнуто ліміт 1 ГБ' : (e?.message || 'Невідома помилка');
 
 function toast(msg, ms = 2600) {
@@ -567,7 +583,21 @@ onSnapshot(settingsRef, async snap => {
   if (!hashChecked) { hashChecked = true; openPageFromHash(); }
 }, e => { setConn(false); onDbError(e); });
 
+/* Перші ~30 товарів зі швидкого запиту (див. window.__pre) — показуємо, поки вантажиться повний каталог */
+let preview = null;
+const fsVal = v => !v ? null : 'stringValue' in v ? v.stringValue : 'integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue
+  : 'booleanValue' in v ? v.booleanValue : 'timestampValue' in v ? Date.parse(v.timestampValue) : 'arrayValue' in v ? (v.arrayValue.values || []).map(fsVal)
+  : 'mapValue' in v ? Object.fromEntries(Object.entries(v.mapValue.fields || {}).map(([k, x]) => [k, fsVal(x)])) : null;
+window.__pre?.then(rows => {
+  if (productsLoaded || !Array.isArray(rows)) return;
+  try {
+    preview = rows.filter(x => x.document).map(x => ({ ...normalizeProduct(fsVal({ mapValue: { fields: x.document.fields } })), _id: x.document.name.split('/').pop() }));
+    if (!productsLoaded && preview.length) window.applyFilters();
+  } catch (e) { preview = null; }
+});
+
 onSnapshot(productsCol, snap => {
+  if (snap.empty && snap.metadata.fromCache) return;   // порожній кеш при першому візиті — чекаємо відповіді сервера
   products = snap.docs.map(d => ({ ...normalizeProduct(d.data()), _id: d.id }));
   products.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const firstLoad = !productsLoaded;
@@ -775,9 +805,10 @@ async function ensureSpace(bytes, ctx = {}) {
 async function uploadBlob(blob, folder, ext, type) {
   assertSpace(blob.size);
   const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const r = sRef(storage, path);
-  await uploadBytes(r, blob, { contentType: type });
-  const url = await getDownloadURL(r);
+  const S = await stor();
+  const r = S.ref(S.storage, path);
+  await S.uploadBytes(r, blob, { contentType: type });
+  const url = await S.getDownloadURL(r);
   stats.usedBytes += blob.size; stats.fileCount += 1; renderStorage();
   setDoc(statsRef, { usedBytes: increment(blob.size), fileCount: increment(1) }, { merge: true }).catch(onDbError);
   return { url, path, size: blob.size };
@@ -810,10 +841,11 @@ async function uploadVideoFile(file, name = 'video.mp4') {
 /* Видалення файлу з хмари + зменшення лічильника */
 async function deleteMedia(m) {
   if (!m || !m.path) return;
-  const r = sRef(storage, m.path);
+  const S = await stor();
+  const r = S.ref(S.storage, m.path);
   let size = m.size;
-  try { if (!size) size = (await getMetadata(r)).size; } catch (e) {}
-  try { await deleteObject(r); }
+  try { if (!size) size = (await S.getMetadata(r)).size; } catch (e) {}
+  try { await S.deleteObject(r); }
   catch (e) { if (e.code !== 'storage/object-not-found') { console.error(e); return; } size = 0; }
   if (size) {
     stats.usedBytes = Math.max(0, (stats.usedBytes || 0) - size); stats.fileCount = Math.max(0, (stats.fileCount || 0) - 1); renderStorage();
@@ -825,10 +857,11 @@ window.recountStorage = async function () {
   $('storageText').textContent = 'Підрахунок… (може зайняти хвилину)';
   let bytes = 0, count = 0;
   try {
+    const S = await stor();
     for (const folder of ['products', 'branding']) {
-      let list; try { list = await listAll(sRef(storage, folder)); } catch (e) { continue; }
+      let list; try { list = await S.listAll(S.ref(S.storage, folder)); } catch (e) { continue; }
       for (let i = 0; i < list.items.length; i += 25) {
-        const metas = await Promise.all(list.items.slice(i, i + 25).map(r => getMetadata(r).catch(() => null)));
+        const metas = await Promise.all(list.items.slice(i, i + 25).map(r => S.getMetadata(r).catch(() => null)));
         metas.forEach(m => { if (m) { bytes += m.size; count++; } });
       }
     }
@@ -851,16 +884,28 @@ function renderStorage() {
 }
 
 /* ---------- Вхід в адмінку (Firebase Auth, пристрій запам'ятовується) ---------- */
-let authReady = false;
-onAuthStateChanged(auth, user => {
-  authReady = true;
-  isAdmin = !!user;
-  if (user) { ls.set(LS_ADMIN, '1'); subscribeImports(); }
-  else if (!$('adminPanel').classList.contains('translate-x-full')) window.closeAdmin();
-});
-window.requestAdminAccess = function () {
-  if (auth.currentUser) { isAdmin = true; openAdmin(); return; }
-  if (!authReady) return toast('Зачекайте секунду і натисніть ще раз');
+// Бібліотека входу вантажиться лише на пристрої адміна (або після натискання ⚙️)
+let authLib = null;
+function loadAuth() {
+  if (!authLib) authLib = import(FB + 'firebase-auth.js').then(m => {
+    const auth = m.getAuth(app);
+    return new Promise(res => {
+      let first = true;
+      m.onAuthStateChanged(auth, user => {
+        isAdmin = !!user;
+        if (user) { ls.set(LS_ADMIN, '1'); subscribeImports(); }
+        else if (!$('adminPanel').classList.contains('translate-x-full')) window.closeAdmin();
+        if (first) { first = false; res({ ...m, auth }); }
+      });
+    });
+  });
+  return authLib;
+}
+if (isAdminDevice()) loadAuth().catch(console.error);   // адмін уже входив з цього пристрою — відновлюємо вхід
+window.requestAdminAccess = async function () {
+  let A;
+  try { A = await loadAuth(); } catch (e) { authLib = null; return alert('Не вдалося завантажити вхід. Перевірте інтернет і спробуйте ще раз.'); }
+  if (A.auth.currentUser) { isAdmin = true; openAdmin(); return; }
   $('loginErr').textContent = ''; $('loginPass').value = '';
   $('loginModal').classList.remove('hidden'); setTimeout(() => $('loginEmail').focus(), 50);
 };
@@ -868,7 +913,8 @@ window.closeLogin = () => $('loginModal').classList.add('hidden');
 window.doLogin = async function () {
   const btn = $('loginBtn'); btn.disabled = true; $('loginErr').textContent = '';
   try {
-    await signInWithEmailAndPassword(auth, $('loginEmail').value.trim(), $('loginPass').value);
+    const A = await loadAuth();
+    await A.signInWithEmailAndPassword(A.auth, $('loginEmail').value.trim(), $('loginPass').value);
     window.closeLogin(); isAdmin = true; openAdmin();
   } catch (e) {
     const c = e?.code || '';
@@ -881,7 +927,7 @@ window.doLogin = async function () {
 window.logoutDevice = async function () {
   if (!confirm('Вийти з адмінки на цьому пристрої? Наступного разу знадобиться пароль.')) return;
   window.closeAdmin(); isAdmin = false;
-  try { await signOut(auth); } catch (e) {}
+  try { const A = await loadAuth(); await A.signOut(A.auth); } catch (e) {}
   ls.del(LS_ADMIN); toast('Ви вийшли з адмінки');
 };
 function lockBody() {
@@ -950,7 +996,7 @@ function renderStats(a, days) {
     <div><div class="font-bold text-xs text-neutral-800 mb-1">🏆 ТОП-20 товарів</div>
       ${top.map((x, i) => `<div class="flex items-center gap-2 bg-white border rounded-lg p-1.5 mb-1">
         <span class="text-[11px] w-5 text-neutral-400 text-center">${i + 1}</span>
-        ${x.p.images[0] ? `<img src="${esc(x.p.images[0].url)}" loading="lazy" class="w-10 h-10 object-cover rounded">` : '<div class="w-10 h-10 bg-neutral-200 rounded"></div>'}
+        ${x.p.images[0] ? imgTag(x.p.images[0].url, 100, 'loading="lazy" class="w-10 h-10 object-cover rounded"') : '<div class="w-10 h-10 bg-neutral-200 rounded"></div>'}
         <div class="flex-1 min-w-0 text-xs text-neutral-800"><div class="font-bold truncate">${esc(x.p.title)}</div><div class="text-[10px] text-neutral-500">${esc(x.p.sku)}</div></div>
         <div class="text-xs text-neutral-800 whitespace-nowrap">👁 ${x.v} · 🛒 ${x.c}</div></div>`).join('') || '<div class="text-xs text-neutral-400">Поки немає даних</div>'}</div>
     <div><div class="font-bold text-xs text-neutral-800 mb-1">🗂 Розділи</div>${barRows(topList(a.cats, 10), esc)}</div>
@@ -1598,7 +1644,7 @@ window.setAdmImport = id => {
 };
 function adminCard(p) {
   const id = p._id; const [sl, sc] = STATUS[p.status] || STATUS.published;
-  const thumb = p.images[0] ? `<img src="${esc(p.images[0].url)}" loading="lazy" class="w-14 h-14 object-cover rounded-lg shrink-0">` : `<div class="w-14 h-14 flex items-center justify-center bg-neutral-200 rounded-lg shrink-0">📦</div>`;
+  const thumb = p.images[0] ? imgTag(p.images[0].url, 120, 'loading="lazy" class="w-14 h-14 object-cover rounded-lg shrink-0"') : `<div class="w-14 h-14 flex items-center justify-center bg-neutral-200 rounded-lg shrink-0">📦</div>`;
   if (!expanded.has(id)) return `
   <div class="product-admin-card flex items-center gap-2">
     ${thumb}
@@ -2058,7 +2104,7 @@ function renderBanner() {
   $('bannerSection').classList.toggle('hidden', b.enabled === false);
   if (b.enabled === false) return;
   const bg = b.image?.url
-    ? `background-image:linear-gradient(to right,rgba(0,0,0,.75),rgba(0,0,0,.2)),url('${esc(b.image.url)}')`
+    ? `background-image:linear-gradient(to right,rgba(0,0,0,.75),rgba(0,0,0,.2)),url('${esc(small(b.image.url, 1200))}')`
     : 'background-image:linear-gradient(135deg,#402e28,#8c6d62)';
   $('dynamicBannerContainer').innerHTML = `
     <div class="absolute inset-0 bg-cover bg-center" style="${bg}"></div>
@@ -2093,8 +2139,8 @@ window.resetFilters = function () {
   selectedFilters = {}; renderStoreFilters(); window.applyFilters();
 };
 window.applyFilters = function () {
-  if (!productsLoaded) { $('productGrid').innerHTML = '<div class="col-span-full py-10 text-center text-neutral-400 text-xs">Завантаження товарів…</div>'; return; }
-  let r = products.filter(visible);
+  if (!productsLoaded && !preview) { $('productGrid').innerHTML = '<div class="col-span-full py-10 text-center text-neutral-400 text-xs">Завантаження товарів…</div>'; return; }
+  let r = (productsLoaded ? products : preview).filter(visible);
   const q = $('searchInput').value.toLowerCase().trim();
   const minP = parseFloat($('minPrice').value) || 0, maxP = parseFloat($('maxPrice').value) || Infinity;
   if (currentCategory !== 'all') r = r.filter(p => p.category === currentCategory);
@@ -2104,10 +2150,36 @@ window.applyFilters = function () {
   const s = $('sortOrder').value;
   if (s === 'cheap') r.sort((a, b) => a.price - b.price); else if (s === 'expensive') r.sort((a, b) => b.price - a.price);
   if (q) r.sort((a, b) => ((b.sku || '').toLowerCase() === q) - ((a.sku || '').toLowerCase() === q));
-  $('productCount').innerText = `Знайдено: ${r.length}`;
-  lastFound = r.length;
-  $('productGrid').innerHTML = r.length ? r.map(productCard).join('') : '<div class="col-span-full py-8 text-center text-neutral-500 text-xs">Товарів не знайдено</div>';
+  $('productCount').innerText = productsLoaded ? `Знайдено: ${r.length}` : 'Завантаження…';
+  lastFound = productsLoaded ? r.length : -1;
+  // Нові фільтри — починаємо з перших карток; оновлення бази без зміни фільтрів не скидає вже показані
+  const key = JSON.stringify([currentCategory, q, minP, maxP === Infinity ? 0 : maxP, selectedFilters, s]);
+  if (key !== gridKey) { gridKey = key; gridShown = GRID_STEP; }
+  gridList = r;
+  if (!r.length) { $('productGrid').innerHTML = '<div class="col-span-full py-8 text-center text-neutral-500 text-xs">Товарів не знайдено</div>'; return; }
+  $('productGrid').innerHTML = r.slice(0, gridShown).map(productCard).join('');
+  addGridSentinel();
 };
+/* Картки показуємо порціями: телефону не треба одразу будувати сотні карток і вантажити їхні фото */
+const GRID_STEP = 24;
+let gridList = [], gridShown = GRID_STEP, gridKey = '';
+const gridObs = 'IntersectionObserver' in window
+  ? new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) showMoreCards(); }, { rootMargin: '800px 0px' })
+  : null;
+function addGridSentinel() {
+  if (!productsLoaded || gridList.length <= gridShown) return;   // поки показано попередній список — кнопку «ще» не малюємо
+  $('productGrid').insertAdjacentHTML('beforeend', `<button id="gridMore" onclick="window.showMoreCards()" class="col-span-full py-3 bg-white border border-neutral-200 rounded-xl text-xs font-medium min-h-[44px]">Показати ще (${gridList.length - gridShown})</button>`);
+  if (gridObs) gridObs.observe($('gridMore'));
+}
+function showMoreCards() {
+  const more = $('gridMore'); if (!more) return;
+  if (gridObs) gridObs.unobserve(more);
+  more.remove();
+  $('productGrid').insertAdjacentHTML('beforeend', gridList.slice(gridShown, gridShown + GRID_STEP).map(productCard).join(''));
+  gridShown += GRID_STEP;
+  addGridSentinel();
+}
+window.showMoreCards = showMoreCards;
 $('searchInput').addEventListener('input', () => {
   window.applyFilters();
   clearTimeout(searchTimer);
@@ -2123,7 +2195,7 @@ function productCard(p) {
   return `<div class="bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-sm flex flex-col justify-between">
     <div>
       <div class="relative aspect-square bg-neutral-100 cursor-pointer" onclick="window.openProductModal('${id}')">
-        ${p.images[0] ? `<img src="${esc(p.images[0].url)}" loading="lazy" class="w-full h-full object-cover" alt="${esc(p.title)}">` : '<div class="w-full h-full flex items-center justify-center text-neutral-300 text-3xl">📦</div>'}
+        ${p.images[0] ? imgTag(p.images[0].url, 400, `loading="lazy" class="w-full h-full object-cover" alt="${esc(p.title)}"`) : '<div class="w-full h-full flex items-center justify-center text-neutral-300 text-3xl">📦</div>'}
         ${p.images.length > 1 ? `<span class="absolute bottom-1.5 right-1.5 bg-black/60 text-white text-[9px] px-1.5 rounded">📷 ${p.images.length}</span>` : ''}
         ${p.video ? '<span class="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[9px] px-1.5 rounded">🎥</span>' : ''}
       </div>
@@ -2151,7 +2223,7 @@ window.openProductModal = function (id) {
       <div id="mainModalMedia" class="aspect-square bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center">${mediaHtml(first)}</div>
       ${media.length > 1 ? `<div class="flex gap-1.5 overflow-x-auto pb-1">${media.map((m, i) => m.type === 'video'
         ? `<div onclick="window.selectModalMedia(${i})" class="w-14 h-14 shrink-0 rounded cursor-pointer bg-neutral-800 flex items-center justify-center text-white">▶</div>`
-        : `<img src="${esc(m.url)}" onclick="window.selectModalMedia(${i})" class="w-14 h-14 shrink-0 object-cover rounded cursor-pointer border">`).join('')}</div>` : ''}
+        : imgTag(m.url, 120, `loading="lazy" onclick="window.selectModalMedia(${i})" class="w-14 h-14 shrink-0 object-cover rounded cursor-pointer border"`)).join('')}</div>` : ''}
     </div>
     <div>
       <span class="text-[10px] text-neutral-500 uppercase">${esc(p.category)}</span>
@@ -2185,7 +2257,7 @@ window.shareProduct = async id => {
 };
 function mediaHtml(m) {
   if (!m) return '<span class="text-4xl text-neutral-300">📦</span>';
-  return m.type === 'video' ? `<video src="${esc(m.url)}" controls playsinline class="w-full h-full object-contain bg-black"></video>` : `<img src="${esc(m.url)}" class="w-full h-full object-cover">`;
+  return m.type === 'video' ? `<video src="${esc(m.url)}" controls playsinline preload="metadata" class="w-full h-full object-contain bg-black"></video>` : imgTag(m.url, 900, 'class="w-full h-full object-cover"');
 }
 window.selectModalMedia = i => { const m = (window.currentModalMedia || [])[i]; if (m) $('mainModalMedia').innerHTML = mediaHtml(m); };
 window.closeProductModal = () => {
@@ -2222,7 +2294,7 @@ function renderCart() {
   box.innerHTML = cart.map(it => {
     total += it.price * it.qty;
     return `<div class="flex items-center gap-2.5 bg-neutral-50 p-2 rounded-xl border text-xs">
-      ${it.img ? `<img src="${esc(it.img)}" class="w-12 h-12 object-cover rounded-lg">` : '<div class="w-12 h-12 flex items-center justify-center bg-neutral-100 rounded-lg">📦</div>'}
+      ${it.img ? imgTag(it.img, 120, 'class="w-12 h-12 object-cover rounded-lg"') : '<div class="w-12 h-12 flex items-center justify-center bg-neutral-100 rounded-lg">📦</div>'}
       <div class="flex-1 min-w-0"><h4 class="font-bold truncate">${esc(it.title)}</h4>${it.sku ? `<div class="text-[10px] text-neutral-400">арт. ${esc(it.sku)}</div>` : ''}<p class="text-neutral-600">${it.price} грн ${esc(it.priceNote)}</p></div>
       <div class="flex items-center gap-1.5">
         <button onclick="window.updateCartQty('${it.id}',-1)" class="w-9 h-9 border rounded bg-white font-bold">-</button><span>${it.qty}</span>
