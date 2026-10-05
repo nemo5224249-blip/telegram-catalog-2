@@ -1,0 +1,55 @@
+# .github/workflows/dd-auto.yml
+# Запускається автоматично через API або вручну з параметром order_id
+
+name: DD Tuning авто-замовлення
+
+on:
+  workflow_dispatch:
+    inputs:
+      order_id:
+        description: 'ID замовлення'
+        required: true
+
+jobs:
+  place-order:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Установити залежності
+        run: |
+          pip install playwright python-dotenv requests
+          playwright install chromium --with-deps
+
+      - name: Експорт замовлення з Firestore
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: python tools/export_order.py ${{ github.event.inputs.order_id }}
+
+      - name: Оформити замовлення на DD Tuning
+        env:
+          DD_LOGIN:            ${{ secrets.DD_LOGIN }}
+          DD_PASSWORD:         ${{ secrets.DD_PASSWORD }}
+          TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY:  ${{ secrets.FIREBASE_PRIVATE_KEY }}
+        run: python tools/dd_auto.py ${{ github.event.inputs.order_id }}
+
+      - name: Зберегти скріншот (якщо помилка)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dd-error-screenshot
+          path: data/dd_error_*.png
+          retention-days: 3
