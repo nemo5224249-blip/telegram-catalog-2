@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#59423a">
-<title id="pageTitle">Fashion Стиль — Інтернет-магазин одягу</title>
-<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2373574d'/%3E%3Ctext x='32' y='45' font-size='38' font-family='Arial,sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EF%3C/text%3E%3C/svg%3E"><meta name="description" content="Інтернет-магазин сучасного одягу та аксесуарів. Нові колекції, швидке замовлення в Telegram.">
+<title id="pageTitle">Premium select — Інтернет-магазин одягу</title>
+<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2373574d'/%3E%3Ctext x='32' y='45' font-size='38' font-family='Arial,sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E"><meta name="description" content="Premium select — ваш персональний байєр: підбір, викуп і доставка одягу, взуття та аксесуарів. Швидке замовлення в Telegram.">
 <!-- Прев'ю посилання у Facebook / Instagram / Telegram (Facebook не виконує JS, тому лише статичні теги) -->
 <meta property="og:type" content="website">
 <meta property="og:locale" content="uk_UA">
-<meta property="og:site_name" content="Fashion Стиль">
-<meta property="og:title" content="Fashion Стиль — Інтернет-магазин одягу">
-<meta property="og:description" content="Нові колекції одягу та аксесуарів. Замовлення в Telegram.">
+<meta property="og:site_name" content="Premium select">
+<meta property="og:title" content="Premium select — Інтернет-магазин одягу">
+<meta property="og:description" content="Ваш персональний байєр: підбір, викуп і доставка. Замовлення в Telegram.">
 <meta property="og:url" content="https://nemo5224249-blip.github.io/telegram-catalog-2/">
 <!-- Картинка прев'ю = фото банера. Якщо зміните банер в адмінці — старе фото видалиться, і цю адресу треба оновити -->
 <meta property="og:image" content="https://firebasestorage.googleapis.com/v0/b/premium-luxe-shop.firebasestorage.app/o/branding%2F1790884561903_31zud6.jpg?alt=media&amp;token=a82d426f-3b81-48bd-bfb0-026245d8c3a2">
@@ -563,7 +563,7 @@ const PRIVACY_PAGE = { id: 'pgPrivacy', slug: 'privacy', title: 'Політик�
 const SKU_DIGITS = 5;
 const DEFAULT_SETTINGS = {
   geminiInstructions: '', catCodes: {}, pages: [...DEFAULT_PAGES, PRIVACY_PAGE], privacyAdded: true, metaPixelId: '',
-  storeName: 'Fashion Стиль', storeLogo: null, telegram: 'yuli666666',
+  storeName: 'Premium select', storeLogo: null, telegram: 'yuli666666',
   categories: ['Жіночий одяг', 'Чоловічий одяг', 'Верхній одяг', 'Взуття', 'Аксесуари'],
   filterGroups: [], allowNewCategories: true,
   banner: { enabled: true, tag: 'Нова колекція 2026', title: 'Свіжі тренди моди', subtitle: 'Вишуканий одяг європейської якості.', image: null }
@@ -2185,7 +2185,7 @@ function renderStore() {
   applyBranding(); renderCategoryNav(); renderStoreFilters(); renderBanner(); renderPagesLinks(); window.applyFilters();
 }
 function applyBranding() {
-  const name = settings.storeName || 'Fashion Стиль';
+  const name = settings.storeName || 'Premium select';
   $('headerStoreName').innerText = name; $('footerStoreName').innerText = name;
   $('pageTitle').innerText = name + ' — Інтернет-магазин одягу';
   const logo = settings.storeLogo?.url ? `<img src="${esc(settings.storeLogo.url)}" class="w-full h-full object-cover" alt="">` : esc(name[0] || 'F');
