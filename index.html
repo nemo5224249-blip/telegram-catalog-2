@@ -1286,6 +1286,13 @@ function shortTitleFromText(text) {
   }
   return '';
 }
+// Короткий режим для вкладки «Автоматично» (стан зберігається, поки відкрита сторінка)
+let autoBrief = false;
+window.setAutoBrief = v => { autoBrief = !!v; };
+// Коротка картка: назва з 2–3 слів, ціна й розділ; решта полів порожні
+function makeBrief(d) {
+  return Object.assign(d, { title: d.title.split(/[ ]+/).slice(0, 3).join(' ').replace(/[ ,.;:–—-]+$/, ''), desc: '', color: '', material: '', filters: {} });
+}
 window.setImportTab = function (tab) {
   importTab = tab;
   document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -1293,7 +1300,8 @@ window.setImportTab = function (tab) {
   $('postForm').classList.toggle('hidden', tab === 'archive');
   $('archiveForm').classList.toggle('hidden', tab !== 'archive');
   $('stepActions').innerHTML = tab === 'auto'
-    ? `<button onclick="window.runAuto()" class="btn-main w-full">⚡ Додати автоматично</button>`
+    ? `<label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="autoBrief" class="w-5 h-5" ${autoBrief ? 'checked' : ''} onchange="window.setAutoBrief(this.checked)"> Лише фото, коротка назва (2–3 слова), ціна і розділ (опис, колір, матеріал і фільтри лишаються порожніми)</label>
+       <button onclick="window.runAuto()" class="btn-main w-full">⚡ Додати автоматично</button>`
     : `<button onclick="window.runStepAnalyze()" class="btn-main w-full">🤖 Аналізувати через Gemini</button>
        <button onclick="window.runStepManual()" class="btn-sec w-full">✍️ Заповнити вручну (без Gemini)</button>`;
   if (tab === 'auto') { draft = null; renderDraft(); }
@@ -1435,7 +1443,12 @@ window.runAuto = async function () {
   try {
     const text = $('stepText').value;
     setStepStatus('⏳ 1/2 Gemini аналізує фото…');
-    const d = aiToDraft(await analyzeProduct(await smallCopies(stepFiles), text), text);
+    let d;
+    if (autoBrief) {
+      // Для короткої картки Gemini вистачає 2 менших фото
+      const two = []; for (const f of stepFiles.slice(0, 2)) two.push(await compressImage(f, 512, 0.7));
+      d = makeBrief(aiToDraft(await analyzeProduct(two, text, true), text));
+    } else d = aiToDraft(await analyzeProduct(await smallCopies(stepFiles), text), text);
     d.category = resolveCategoryAuto(d.category);
     setStepStatus('⏳ 2/2 Завантажую в хмару…');
     const p = await createProductFromFiles(d, stepFiles, stepVideo, 'published', 'Автоматично');
