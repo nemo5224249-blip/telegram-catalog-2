@@ -292,7 +292,7 @@ try { if (localStorage.getItem('theme') === 'dark') document.documentElement.cla
           <label class="btn-sec w-full">🖼 Обрати багато фото<input type="file" accept="image/*,video/*,.json" multiple onchange="window.onArchivePick(this,'files')" class="absolute inset-0 opacity-0"></label>
           <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcPublish" class="w-5 h-5"> Публікувати одразу (без перевірки)</label>
           <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcAiGroup" class="w-5 h-5" checked> Групувати фото через Gemini, якщо немає result.json</label>
-          <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcPriceOnly" class="w-5 h-5"> Лише фото, ціна і розділ (назва, опис, колір, матеріал і фільтри лишаються порожніми)</label>
+          <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcPriceOnly" class="w-5 h-5"> Лише фото, коротка назва (2–3 слова), ціна і розділ (опис, колір, матеріал і фільтри лишаються порожніми)</label>
           <div id="archiveStatus" class="text-xs"></div>
           <div id="archiveProgress"></div>
           <div id="archiveGroups"></div>
@@ -1199,11 +1199,11 @@ function geminiStatus(msg) {
   if (arc?.running) { arc.current = msg; renderArcProgress(); }
   else if (busy && $('stepStatus')) setStepStatus(esc(msg));
 }
-function buildPrompt(text) {
+function buildPrompt(text, shortTitle) {
   const groups = settings.filterGroups.map(g => ({ name: g.name, values: g.values }));
   return `Ти — контент-менеджер інтернет-магазину одягу «${settings.storeName}». Проаналізуй фото товару${text ? ` і текст поста з Telegram: """${text}"""` : ''}.
 Поверни ТІЛЬКИ JSON українською мовою:
-{"title":"коротка продаюча назва до 60 символів","desc":"опис 2-4 речення: що це, фасон, з чим носити","category":"одна категорія","newCategory":false,"color":"основний колір","material":"матеріал або порожній рядок, якщо не зрозуміло","price":null,"filters":{"Назва групи":["значення"]}}
+{"title":"${shortTitle ? 'назва з 2-3 слів, не більше: вид товару і бренд або колір' : 'коротка продаюча назва до 60 символів'}","desc":"опис 2-4 речення: що це, фасон, з чим носити","category":"одна категорія","newCategory":false,"color":"основний колір","material":"матеріал або порожній рядок, якщо не зрозуміло","price":null,"filters":{"Назва групи":["значення"]}}
 Правила:
 - Якщо на фото комплект (наприклад, куртка + спідниця) — назви його комплектом.
 - Не вигадуй бренд, якщо його не видно чітко.
@@ -1214,8 +1214,8 @@ function buildPrompt(text) {
 Побажання власника магазину до назви та опису (обов'язково виконуй; вони важливіші за загальні правила щодо стилю й довжини, але відповідь усе одно лише JSON у форматі вище):
 """${settings.geminiInstructions}"""` : ''}`;
 }
-async function analyzeProduct(blobs, text) {
-  const parts = [{ text: buildPrompt(text) }];
+async function analyzeProduct(blobs, text, shortTitle) {
+  const parts = [{ text: buildPrompt(text, shortTitle) }];
   for (const b of blobs.slice(0, AI_PHOTOS)) parts.push({ inline_data: { mime_type: 'image/jpeg', data: await blobToBase64(b) } });
   return await callGemini(parts);
 }
@@ -1679,8 +1679,10 @@ async function processGroup(g, publish, idx = arc.pos) {
   await ensureSpace(big.reduce((s, b) => s + b.size, 0) + (vid?.blob.size || 0), { archive: true });
   const small = []; for (const b of big.slice(0, AI_PHOTOS)) small.push(await compressImage(b, 768, 0.7));
   geminiStatus(`🤖 Товар #${idx + 1}: Gemini аналізує фото…`);
-  const d = aiToDraft(await analyzeProduct(small, g.text), g.text);
-  if ($('arcPriceOnly').checked) Object.assign(d, { title: '', desc: '', color: '', material: '', filters: {} });
+  const brief = $('arcPriceOnly').checked;
+  const d = aiToDraft(await analyzeProduct(small, g.text, brief), g.text);
+  // Короткий режим: лишаємо тільки назву з 2–3 слів, ціну й розділ
+  if (brief) Object.assign(d, { title: d.title.split(/\s+/).slice(0, 3).join(' ').replace(/[\s,.;:–—-]+$/, ''), desc: '', color: '', material: '', filters: {} });
   d.category = resolveCategoryAuto(d.category);
   await ensureCategory(d.category);
   const p = { ...normalizeProduct({}), ...d, _id: newId(), images: [], video: null, status: publish ? 'published' : 'draft', createdAt: Date.now(), importId: arc.importId, sourceKey: g.key };
