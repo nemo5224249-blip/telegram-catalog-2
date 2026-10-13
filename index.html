@@ -292,6 +292,7 @@ try { if (localStorage.getItem('theme') === 'dark') document.documentElement.cla
           <label class="btn-sec w-full">🖼 Обрати багато фото<input type="file" accept="image/*,video/*,.json" multiple onchange="window.onArchivePick(this,'files')" class="absolute inset-0 opacity-0"></label>
           <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcPublish" class="w-5 h-5"> Публікувати одразу (без перевірки)</label>
           <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcAiGroup" class="w-5 h-5" checked> Групувати фото через Gemini, якщо немає result.json</label>
+          <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcPriceOnly" class="w-5 h-5"> Лише фото, ціна і розділ (назва, опис, колір, матеріал і фільтри лишаються порожніми)</label>
           <div id="archiveStatus" class="text-xs"></div>
           <div id="archiveProgress"></div>
           <div id="archiveGroups"></div>
@@ -1679,6 +1680,7 @@ async function processGroup(g, publish, idx = arc.pos) {
   const small = []; for (const b of big.slice(0, AI_PHOTOS)) small.push(await compressImage(b, 768, 0.7));
   geminiStatus(`🤖 Товар #${idx + 1}: Gemini аналізує фото…`);
   const d = aiToDraft(await analyzeProduct(small, g.text), g.text);
+  if ($('arcPriceOnly').checked) Object.assign(d, { title: '', desc: '', color: '', material: '', filters: {} });
   d.category = resolveCategoryAuto(d.category);
   await ensureCategory(d.category);
   const p = { ...normalizeProduct({}), ...d, _id: newId(), images: [], video: null, status: publish ? 'published' : 'draft', createdAt: Date.now(), importId: arc.importId, sourceKey: g.key };
