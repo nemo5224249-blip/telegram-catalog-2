@@ -1163,7 +1163,7 @@ async function callGemini(parts, tries = geminiDelays.length + 1) {
   for (let a = 1; a <= tries; a++) {
     let r;
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 40000); // Google не відповідає 40 с — пробуємо ще раз
+    const timer = setTimeout(() => ctrl.abort(), 90000); // Google не відповідає 90 с — пробуємо ще раз
     try {
       r = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctrl.signal,
@@ -1696,8 +1696,9 @@ async function processGroup(g, publish, idx = arc.pos) {
   let vid = null;
   if (vidE) { const b = await vidE.get(); if (b.size <= 50 * 1048576) vid = { blob: b, name: vidE.name }; else arc.log.push(`#${idx + 1}: відео більше 50 МБ — пропущено`); }
   await ensureSpace(big.reduce((s, b) => s + b.size, 0) + (vid?.blob.size || 0), { archive: true });
-  const small = []; for (const b of big.slice(0, AI_PHOTOS)) small.push(await compressImage(b, 768, 0.7));
   const brief = $('arcPriceOnly').checked;
+  // Для короткої картки Gemini вистачає 2 менших фото — запит легший і відповідь швидша
+  const small = []; for (const b of big.slice(0, brief ? 2 : AI_PHOTOS)) small.push(await compressImage(b, brief ? 512 : 768, 0.7));
   let d;
   if ($('arcNoAi').checked) {
     const pr = parsePrice(g.text);
