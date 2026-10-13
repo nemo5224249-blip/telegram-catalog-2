@@ -1,0 +1,47 @@
+# Робот: нові пости Telegram-каналу → товари в магазині. Кожні 10 хвилин (і кнопкою «Run workflow»).
+# Потрібні секрети (GitHub → Settings → Secrets and variables → Actions):
+#   TG_BOT_TOKEN — токен бота від @BotFather (бот має бути адміністратором каналу)
+#   GEMINI_API_KEY — ключ Gemini з aistudio.google.com/apikey
+#   FIREBASE_SERVICE_ACCOUNT — увесь вміст JSON-ключа сервісного акаунта Firebase (проєкт premium-luxe-shop)
+# Поки секретів немає, робот просто пропускає запуск.
+name: Telegram → магазин
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+    inputs:
+      check:
+        description: "Лише перевірити налаштування (нічого не додавати)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tg-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: bot/requirements.txt
+      - run: pip install -q -r bot/requirements.txt
+      - name: Нові пости → товари
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TG_CHANNEL: ${{ vars.TG_CHANNEL }}
+          TG_PUBLISH: ${{ vars.TG_PUBLISH }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          PYTHONIOENCODING: utf-8
+        run: python bot/tg_sync.py ${{ github.event.inputs.check == 'true' && '--check' || '' }}
