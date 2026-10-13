@@ -293,6 +293,8 @@ try { if (localStorage.getItem('theme') === 'dark') document.documentElement.cla
           <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcPublish" class="w-5 h-5"> Публікувати одразу (без перевірки)</label>
           <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcAiGroup" class="w-5 h-5" checked> Групувати фото через Gemini, якщо немає result.json</label>
           <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcPriceOnly" class="w-5 h-5"> Лише фото, коротка назва (2–3 слова), ціна і розділ (опис, колір, матеріал і фільтри лишаються порожніми)</label>
+          <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="arcNoAi" class="w-5 h-5" onchange="window.arcNoAiToggle()"> Без Gemini: фото, ціна і коротка назва з тексту поста, один розділ на всю партію</label>
+          <div id="arcNoAiBox" class="hidden"><label class="lbl">Розділ для всіх товарів цієї партії</label><select id="arcCat" class="inp"></select></div>
           <div id="archiveStatus" class="text-xs"></div>
           <div id="archiveProgress"></div>
           <div id="archiveGroups"></div>
@@ -1269,6 +1271,21 @@ const TAB_HINTS = {
   auto: 'Фото + текст → одна кнопка → товар одразу з’являється в магазині. Виправити можна потім у «Товарах».',
   archive: 'Архів експорту Telegram або багато фото → система сама розбирає їх на товари → ви перевіряєте список.'
 };
+// Режим «Без Gemini»: показуємо вибір розділу для всієї партії
+window.arcNoAiToggle = function () {
+  const on = $('arcNoAi').checked;
+  $('arcNoAiBox').classList.toggle('hidden', !on);
+  if (on) $('arcCat').innerHTML = settings.categories.map(c => `<option>${esc(c)}</option>`).join('');
+};
+// Коротка назва з першого рядка поста: перші 2–3 слова без цін та емодзі
+function shortTitleFromText(text) {
+  for (const line of String(text || '').split(/\r?\n/)) {
+    const words = line.trim().split(/\s+/).map(w => w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ''))
+      .filter(w => /^\p{L}/u.test(w) && !/^(грн|uah)$/i.test(w));
+    if (words.length) return words.slice(0, 3).join(' ');
+  }
+  return '';
+}
 window.setImportTab = function (tab) {
   importTab = tab;
   document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -1487,7 +1504,7 @@ async function buildGroups(entries) {
     return { groups: groupByGap(ts, 2), method: 'за часом публікації в назвах файлів' };
   }
   const sorted = [...media].sort((a, b) => a.path.localeCompare(b.path, undefined, { numeric: true }));
-  if ($('arcAiGroup').checked && ls.get(LS_KEY)) return { groups: await groupWithGemini(sorted), method: 'Gemini — за схожістю фото' };
+  if ($('arcAiGroup').checked && !$('arcNoAi').checked && ls.get(LS_KEY)) return { groups: await groupWithGemini(sorted), method: 'Gemini — за схожістю фото' };
   const distinct = new Set(sorted.map(e => Math.round(e.date / 1000))).size;
   if (distinct < sorted.length / 3) return { groups: sorted.map(e => ({ files: [e], text: '', key: 'f:' + e.name })), method: 'кожне фото — окремий товар (об’єднайте вручну)' };
   return { groups: groupByGap(sorted.map(e => ({ e, t: Math.round(e.date / 1000) })), 3), method: 'за часом створення файлів' };
@@ -1631,7 +1648,7 @@ async function arcWait(ms) {
 }
 window.arcStart = async function (retryOnly) {
   if (!arc || arc.running) return;
-  if (!ls.get(LS_KEY)) return alert('Спочатку вставте API-ключ Gemini у розділі «⚙️ Налаштування»');
+  if (!$('arcNoAi').checked && !ls.get(LS_KEY)) return alert('Спочатку вставте API-ключ Gemini у розділі «⚙️ Налаштування»');
   arc.running = true; arc.stop = false; arc.paused = false; renderArcProgress();
   const publish = $('arcPublish').checked;
   let wake = null; try { wake = await navigator.wakeLock?.request('screen'); } catch (e) {}
@@ -1680,9 +1697,15 @@ async function processGroup(g, publish, idx = arc.pos) {
   if (vidE) { const b = await vidE.get(); if (b.size <= 50 * 1048576) vid = { blob: b, name: vidE.name }; else arc.log.push(`#${idx + 1}: відео більше 50 МБ — пропущено`); }
   await ensureSpace(big.reduce((s, b) => s + b.size, 0) + (vid?.blob.size || 0), { archive: true });
   const small = []; for (const b of big.slice(0, AI_PHOTOS)) small.push(await compressImage(b, 768, 0.7));
-  geminiStatus(`🤖 Товар #${idx + 1}: Gemini аналізує фото…`);
   const brief = $('arcPriceOnly').checked;
-  const d = aiToDraft(await analyzeProduct(small, g.text, brief), g.text);
+  let d;
+  if ($('arcNoAi').checked) {
+    const pr = parsePrice(g.text);
+    d = { title: shortTitleFromText(g.text), desc: '', category: $('arcCat').value || settings.categories[0] || '', color: '', material: '', price: pr.price || 0, priceNote: pr.note, filters: {}, source: g.text || '' };
+  } else {
+    geminiStatus(`🤖 Товар #${idx + 1}: Gemini аналізує фото…`);
+    d = aiToDraft(await analyzeProduct(small, g.text, brief), g.text);
+  }
   // Короткий режим: лишаємо тільки назву з 2–3 слів, ціну й розділ
   if (brief) Object.assign(d, { title: d.title.split(/\s+/).slice(0, 3).join(' ').replace(/[\s,.;:–—-]+$/, ''), desc: '', color: '', material: '', filters: {} });
   d.category = resolveCategoryAuto(d.category);
