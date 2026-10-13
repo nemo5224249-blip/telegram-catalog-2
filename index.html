@@ -1192,7 +1192,9 @@ async function callGemini(parts, tries = geminiDelays.length + 1) {
     if (/API key|API_KEY/i.test(body)) throw new Error('Невірний API-ключ Gemini');
     if (r.status === 404) throw new Error(`Модель «${model}» не знайдена — змініть назву моделі в налаштуваннях`);
     if (r.status === 429) throw new Error('Gemini: перевищено ліміт запитів, спробуйте пізніше');
-    throw new Error(`Gemini помилка ${r.status}`);
+    // Показуємо пояснення від Google, а не лише номер помилки
+    let why = ''; try { why = JSON.parse(body).error?.message || ''; } catch (e) {}
+    throw new Error(`Gemini помилка ${r.status}` + (why ? `: ${why.slice(0, 300)}` : ''));
   }
 }
 function geminiStatus(msg) {
@@ -1257,7 +1259,7 @@ window.saveGemini = function () {
 };
 window.testGemini = async function () {
   window.saveGemini(); $('geminiTest').textContent = '⏳ Перевіряю…';
-  try { await callGemini([{ text: 'Поверни JSON {"ok":true}' }], 1); $('geminiTest').textContent = '✅ Ключ працює!'; }
+  try { await callGemini([{ text: 'Поверни JSON {"ok":true}' }], 3); $('geminiTest').textContent = '✅ Ключ працює!'; }
   catch (e) { $('geminiTest').textContent = '❌ ' + errMsg(e); }
 };
 
