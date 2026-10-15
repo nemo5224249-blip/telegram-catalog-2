@@ -383,7 +383,7 @@ try { if (localStorage.getItem('theme') === 'dark') document.documentElement.cla
       <div class="adm-body space-y-2">
         <div><label class="lbl">Назва магазину</label><input id="setStoreName" class="inp"></div>
         <div><label class="lbl">Telegram для замовлень (без @)</label><input id="setTelegram" class="inp"></div>
-        <div><label class="lbl">📱 Міні-застосунок у Telegram (необов'язково): бот/назва з BotFather. Тоді посилання «Поділитися» відкривають товар прямо в Telegram</label><input id="setMiniApp" class="inp" autocapitalize="off" spellcheck="false" placeholder="напр. premium_select_bot/shop"></div>
+        <div><label class="lbl">📱 Міні-застосунок у Telegram (необов'язково): бот/назва з BotFather. Тоді «Поділитися» дає посилання на бота — він завжди відкривається з головної сторінки</label><input id="setMiniApp" class="inp" autocapitalize="off" spellcheck="false" placeholder="напр. premium_select_bot/shop"></div>
         <div><label class="lbl">Логотип</label><input type="file" id="setLogo" accept="image/*" class="file-inp"></div>
         <div><label class="lbl">📈 Meta Pixel ID (реклама Facebook / Instagram) — лише цифри, з Events Manager</label><input id="setPixel" class="inp" inputmode="numeric" placeholder="напр. 1234567890123456"></div>
         <label class="flex items-center gap-2 text-xs min-h-[36px]"><input type="checkbox" id="setAllowNew" class="w-5 h-5"> Gemini може сам створювати нові категорії</label>
@@ -624,10 +624,8 @@ const TG = TG_HINT ? await new Promise(res => {
 }) : null;
 if (TG) {
   try { TG.ready(); TG.expand(); } catch (e) {}
-  // Посилання t.me/<бот>/<застосунок>?startapp=p-<id> відкриває одразу потрібний товар
-  const sp = TG.initDataUnsafe?.start_param || '';
-  const m = sp.match(/^p[-_]([A-Za-z0-9_-]+)$/);
-  history.replaceState(null, '', location.pathname + location.search + (m ? '#p-' + m[1] : ''));  // прибираємо службові дані Telegram з адреси
+  // Бот завжди відкривається з головної сторінки, навіть за старим посиланням ?startapp=p-<id> на товар
+  history.replaceState(null, '', location.pathname + location.search);  // прибираємо службові дані Telegram з адреси
   // Тема як у Telegram, якщо людина ще не обирала тему на сайті
   try {
     if (!localStorage.getItem('theme') && (TG.colorScheme === 'dark') !== document.documentElement.classList.contains('dark')) {
@@ -635,11 +633,14 @@ if (TG) {
     }
   } catch (e) {}
 }
-// Посилання на товар: у міні-застосунку (якщо його вказано в налаштуваннях) або на сайт
+// Посилання на товар — на сайт (бот завжди відкривається з головної, тож у замовленні продавець бачить товар на сайті)
 function productLink(id, utm) {
-  const app = (settings.miniApp || '').trim();
-  if (app) return `https://t.me/${app}?startapp=p-${id}`;
   return `${location.origin}${location.pathname}${utm ? '?utm_source=' + utm : ''}#p-${id}`;
+}
+// Посилання, яким діляться: на бота (головна сторінка), якщо його вказано в налаштуваннях, інакше — на товар на сайті
+function shareLink(id) {
+  const app = (settings.miniApp || '').trim();
+  return app ? `https://t.me/${app}` : productLink(id, 'share');
 }
 
 /* ---------- Допоміжні ---------- */
@@ -2425,13 +2426,13 @@ window.openProductModal = function (id) {
 // Поділитися товаром: на телефоні відкриває меню (Telegram, Viber, Instagram…), на комп'ютері копіює посилання
 window.shareProduct = async id => {
   const p = findP(id); if (!p) return;
-  const url = productLink(p._id, 'share');
+  const url = shareLink(p._id);
   const text = `${p.title} — ${p.price} грн${p.priceNote ? ' ' + p.priceNote : ''}`;
   if (navigator.share) {
     try { await navigator.share({ title: p.title, text, url }); return; }
     catch (e) { if (e?.name === 'AbortError') return; }   // людина закрила меню — нічого не робимо
   }
-  try { await navigator.clipboard.writeText(`${text}\n${url}`); toast('🔗 Посилання на товар скопійовано'); }
+  try { await navigator.clipboard.writeText(`${text}\n${url}`); toast('🔗 Посилання скопійовано'); }
   catch (e) { prompt('Скопіюйте посилання:', url); }
 };
 function mediaHtml(m) {
