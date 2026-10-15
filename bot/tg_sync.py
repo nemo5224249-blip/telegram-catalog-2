@@ -5,7 +5,8 @@
 Бере нові пости каналу через бота (бот має бути адміністратором каналу), групує фото в товари
 так само, як імпорт архіву на сайті (ключ товару 'tg:<номер першого повідомлення>' — тому архів
 і робот не створюють дублів), питає в Gemini коротку назву й розділ, ціну бере з тексту поста
-і створює картку в базі магазину.
+і створює картку в базі магазину. Пост за шаблоном власника (рядок «Ціна: …», див. parse_template) —
+назва й розділ беруться з самого поста, без Gemini.
 
 Секрети (GitHub → Settings → Secrets and variables → Actions):
   TG_BOT_TOKEN              — токен бота від @BotFather
@@ -49,13 +50,52 @@ class Retry(Exception):
 
 # ---------- Розбір постів (без мережі — це перевіряється тестом) ----------
 
-def parse_price(text):
-    """Ціна з тексту: «2250+вага» → 2250 і примітка «+ вага» (так само, як на сайті)."""
-    m = re.search(r'(\d[\d  ]{0,7}\d|\d)\s*(?:грн|uah|₴)?\s*(\+[^\n]{0,40})?', str(text or ''), re.I)
-    if not m:
-        return None, ''
-    price = int(re.sub(r'[  ]', '', m.group(1)))
+NUM = r'(?<![\w@])(\d{1,3}(?:[ \u00a0\u202f]\d{3})+(?!\d)|\d+)'   # «4900», «4 900»; не частина слова («@yuli666666»)
+NOTE = r'\s*(\+[^\n]{0,40})?'                                    # «+ доставка», «+вага»
+
+
+def _price(m):
+    price = int(re.sub(r'[ \u00a0\u202f]', '', m.group(1)))
     return price, ('+ ' + m.group(2)[1:].strip()) if m.group(2) else ''
+
+
+def parse_price(text):
+    """Ціна з тексту поста (так само, як на сайті):
+    1) після слова «ціна» («Ціна: 4900 грн», «ціна 6100»); 2) число з «грн»;
+    3) число з «+доставка», «+вага», «з вагою»;
+    4) інакше останнє число від 100, крім розмірів «40-45», «50%», «1250$», «1:1», «25 см».
+    «2250+вага» → 2250 і примітка «+ вага»."""
+    t = str(text or '')
+    m = (re.search(r'ціна\s*:?\s*' + NUM + r'\s*(?:грн\.?|uah|₴)?' + NOTE, t, re.I)
+         or re.search(NUM + r'\s*(?:грн|uah|₴)' + NOTE, t, re.I)
+         or re.search(NUM + r'(?=\s*(?:[+*]\s*(?:доставк|ваг)|з\s+(?:вагою|доставкою)))' + NOTE, t, re.I))
+    if m:
+        return _price(m)
+    best = None
+    for m in re.finditer(NUM + NOTE, t):
+        s, e = m.start(1), m.end(1)
+        if (re.search(r'\d\s?[-–/:.,]\s?$', t[max(0, s - 3):s])          # кінець діапазону, «1:1», дата
+                or re.match(r'\s?[-–/:.,]\s?\d', t[e:e + 3])             # початок діапазону «40-45»
+                or re.match(r'\s*(%|\$|€|usd|eur|см|мм|cm|mm|кг|мл|шт|г\b)', t[e:e + 8], re.I)):
+            continue
+        if 100 <= int(re.sub(r'[ \u00a0\u202f]', '', m.group(1))) <= 999999:
+            best = m
+    return _price(best) if best else (None, '')
+
+
+def parse_template(text):
+    """Пост за шаблоном власника — у ньому є рядок «Ціна: …»:
+        Кросівки Loro Piana      ← 1-й рядок — назва
+        Ціна: 4900 грн
+        Розмір: 40-45            ← необов'язково, робот не чіпає
+        Розділ: Чоловікам        ← необов'язково
+    Повертає {'title', 'category'} або None, якщо пост не за шаблоном."""
+    lines = [l.strip() for l in str(text or '').splitlines() if l.strip()]
+    if not any(re.match(r'ціна\s*:', l, re.I) for l in lines):
+        return None
+    first = '' if re.match(r'(ціна|розміри?|розділ)\s*:', lines[0], re.I) else lines[0]
+    cat = next((re.sub(r'^розділ\s*:\s*', '', l, flags=re.I).strip() for l in lines if re.match(r'розділ\s*:', l, re.I)), '')
+    return {'title': re.sub(r'[\s,.;:–—-]+$', '', first)[:90], 'category': cat}
 
 
 def short_title(title):
@@ -292,17 +332,24 @@ def create_product(db, bucket, settings, g, state):
     if used + total > STORAGE_LIMIT:
         raise Retry('У сховищі магазину закінчилося місце (1 ГБ). Видаліть старі товари в адмінці — робот продовжить сам.')
 
-    parts = [{'text': build_prompt(settings, g['text'])}]
-    parts += [{'inline_data': {'mime_type': 'image/jpeg', 'data': base64.b64encode(b).decode()}} for b in photos[:AI_PHOTOS]]
-    ai = gemini(parts) or {}
+    # пост за шаблоном: назва з 1-го рядка, розділ з «Розділ:» (лише наявний) — Gemini потрібен тільки для решти
+    tpl = parse_template(g['text']) or {}
+    cats = settings.get('categories') or DEFAULT_CATEGORIES
+    tpl_cat = next((c for c in cats if c.lower() == tpl.get('category', '').lower()), '')
+    ai = {}
+    if not (tpl.get('title') and tpl_cat):
+        parts = [{'text': build_prompt(settings, g['text'])}]
+        parts += [{'inline_data': {'mime_type': 'image/jpeg', 'data': base64.b64encode(b).decode()}} for b in photos[:AI_PHOTOS]]
+        ai = gemini(parts) or {}
     price, note = parse_price(g['text'])
-    category = resolve_category(db, settings, ai.get('category'))
+    category = tpl_cat or resolve_category(db, settings, ai.get('category'))
+    title = tpl.get('title') or short_title(ai.get('title'))
     now = int(time.time() * 1000)
     pid = new_id()
     # без ціни в магазин не публікуємо — такий товар іде в чернетки, щоб власник дописав ціну
     status = 'published' if PUBLISH and price else 'draft'
     p = {
-        'id': pid, 'title': short_title(ai.get('title')), 'price': price or 0, 'priceNote': note,
+        'id': pid, 'title': title, 'price': price or 0, 'priceNote': note,
         'category': category, 'filters': {}, 'color': '', 'material': '', 'images': [], 'video': None, 'desc': '',
         'status': status, 'createdAt': now, 'importId': state['import_id'], 'sourceKey': g['key'],
         'source': g['text'] or '', 'pinned': False, 'sku': auto_sku(db, settings, category),
