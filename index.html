@@ -561,6 +561,7 @@ async function stor() {
 }
 const settingsRef = doc(db, 'catalog', 'fashionStyleData');   // налаштування (як і раніше)
 const statsRef = doc(db, 'catalog', 'storageStats');
+const privateRef = doc(db, 'private', 'gemini');                // ключ Gemini — читає й пише лише адмін (правила Firestore)
 const countersRef = doc(db, 'catalog', 'skuCounters');     // лічильники автоматичних артикулів          // лічильник зайнятого місця
 const productsCol = collection(db, 'products');               // кожен товар — окремий документ
 const importsCol = collection(db, 'imports');                 // історія імпортів
@@ -1028,7 +1029,7 @@ function loadAuth() {
       let first = true;
       m.onAuthStateChanged(auth, user => {
         isAdmin = !!user;
-        if (user) { ls.set(LS_ADMIN, '1'); subscribeImports(); }
+        if (user) { ls.set(LS_ADMIN, '1'); subscribeImports(); syncGeminiKey(); }
         else if (!$('adminPanel').classList.contains('translate-x-full')) window.closeAdmin();
         if (first) { first = false; res({ ...m, auth }); }
       });
@@ -1281,10 +1282,28 @@ function resolveCategoryAuto(c) {
 async function ensureCategory(c) {
   if (c && !settings.categories.includes(c)) { settings.categories.push(c); await saveSettings(); }
 }
-window.saveGemini = function () {
-  ls.set(LS_KEY, $('setGeminiKey').value.trim());
-  ls.set(LS_MODEL, $('setGeminiModel').value.trim() || DEFAULT_MODEL);
-  renderKeyWarn(); toast('🔑 Ключ збережено на цьому пристрої');
+// Ключ лежить у закритому документі бази (видно лише після входу в адмінку) — тому він є на всіх пристроях адміна.
+// У браузері — його копія, з неї працює Gemini.
+async function syncGeminiKey() {
+  try {
+    const snap = await getDocFromServer(privateRef);
+    const d = snap.exists() ? snap.data() : {};
+    if (d.key) {
+      ls.set(LS_KEY, d.key); if (d.model) ls.set(LS_MODEL, d.model);
+      if (document.activeElement !== $('setGeminiKey')) { $('setGeminiKey').value = d.key; $('setGeminiModel').value = d.model || DEFAULT_MODEL; }
+      renderKeyWarn();
+    } else if (ls.get(LS_KEY)) {                       // у базі ще порожньо — переносимо ключ з цього пристрою
+      await setDoc(privateRef, { key: ls.get(LS_KEY), model: ls.get(LS_MODEL) || DEFAULT_MODEL });
+    }
+  } catch (e) { console.warn('Ключ Gemini з бази:', e?.code || e); }
+}
+window.saveGemini = async function () {
+  const key = $('setGeminiKey').value.trim(), model = $('setGeminiModel').value.trim() || DEFAULT_MODEL;
+  ls.set(LS_KEY, key); ls.set(LS_MODEL, model);
+  renderKeyWarn();
+  if (!key) return toast('🔑 Поле ключа порожнє');     // порожнім ключ у базі не затираємо
+  try { await setDoc(privateRef, { key, model }); toast('🔑 Ключ збережено — він буде на всіх пристроях адміна'); }
+  catch (e) { toast('🔑 Ключ збережено лише на цьому пристрої (у базу не вдалося)', 4000); }
 };
 window.testGemini = async function () {
   window.saveGemini(); $('geminiTest').textContent = '⏳ Перевіряю…';
