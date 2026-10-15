@@ -81,6 +81,24 @@ body.lock{overflow:hidden}
 .history-item{border:1px solid #e5e5e5;border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;font-size:12px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:#262626;color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;z-index:100;max-width:90vw;text-align:center;white-space:pre-line;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* Перегляд фото на весь екран */
+#mainModalMedia.zoomable{cursor:zoom-in;position:relative}
+.zoom-hint{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;pointer-events:none}
+#lightbox{position:fixed;inset:0;z-index:90;background:#000;touch-action:none;overscroll-behavior:contain;user-select:none;-webkit-user-select:none}
+#lightbox.hidden{display:none}
+#lbStage{position:absolute;inset:0;overflow:hidden}
+#lbTrack{display:flex;height:100%;will-change:transform}
+#lbTrack.anim{transition:transform .3s ease}
+.lb-slide{flex:0 0 100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.lb-slide img{max-width:100%;max-height:100%;object-fit:contain;transform-origin:center;will-change:transform;-webkit-user-drag:none;user-select:none}
+.lb-slide.anim,.lb-slide img.anim{transition:transform .25s ease}
+#lbBar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:calc(8px + env(safe-area-inset-top,0px)) 8px 8px 16px;color:#fff;font-size:14px;font-weight:700;background:linear-gradient(rgba(0,0,0,.55),transparent);z-index:2;pointer-events:none}
+#lbBar button{pointer-events:auto}
+.lb-btn{background:rgba(255,255,255,.18);color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1;z-index:2}
+.lb-btn:hover{background:rgba(255,255,255,.3)}
+.lb-nav{position:absolute;top:50%;margin-top:-22px;display:none}
+@media(hover:hover) and (pointer:fine){.lb-nav{display:flex}}
+.lb-nav[disabled]{opacity:.25;cursor:default}
 </style>
 <!-- Tailwind CSS 3.4, зібрано заздалегідь (раніше підключався з CDN і збирався в браузері — повільно). Якщо додаватимете нові класи Tailwind — попросіть перезібрати. -->
 <style id="tw">*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.visible{visibility:visible}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.bottom-0{bottom:0}.bottom-1\.5{bottom:.375rem}.left-0{left:0}.left-1\.5{left:.375rem}.left-2\.5{left:.625rem}.right-0{right:0}.right-1\.5{right:.375rem}.right-3{right:.75rem}.top-0{top:0}.top-2{top:.5rem}.top-3{top:.75rem}.z-10{z-index:10}.z-40{z-index:40}.z-50{z-index:50}.z-\[60\]{z-index:60}.z-\[70\]{z-index:70}.col-span-full{grid-column:1/-1}.mx-2{margin-left:.5rem;margin-right:.5rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:.25rem}.mb-1\.5{margin-bottom:.375rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.ml-1{margin-left:.25rem}.mr-auto{margin-right:auto}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-auto{margin-top:auto}.line-clamp-2{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}.block{display:block}.flex{display:flex}.grid{display:grid}.contents{display:contents}.hidden{display:none}.aspect-square{aspect-ratio:1/1}.h-10{height:2.5rem}.h-11{height:2.75rem}.h-12{height:3rem}.h-14{height:3.5rem}.h-16{height:4rem}.h-20{height:5rem}.h-24{height:6rem}.h-28{height:7rem}.h-44{height:11rem}.h-5{height:1.25rem}.h-7{height:1.75rem}.h-9{height:2.25rem}.h-fit{height:-moz-fit-content;height:fit-content}.h-full{height:100%}.max-h-40{max-height:10rem}.max-h-\[85vh\]{max-height:85vh}.min-h-\[36px\]{min-height:36px}.min-h-\[40px\]{min-height:40px}.min-h-\[44px\]{min-height:44px}.min-h-\[48px\]{min-height:48px}.min-h-screen{min-height:100vh}.w-10{width:2.5rem}.w-11{width:2.75rem}.w-12{width:3rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-2\/5{width:40%}.w-20{width:5rem}.w-5{width:1.25rem}.w-7{width:1.75rem}.w-9{width:2.25rem}.w-full{width:100%}.min-w-0{min-width:0}.min-w-\[40px\]{min-width:40px}.max-w-2xl{max-width:42rem}.max-w-7xl{max-width:80rem}.max-w-lg{max-width:32rem}.max-w-md{max-width:28rem}.max-w-sm{max-width:24rem}.max-w-xl{max-width:36rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.translate-x-full{--tw-translate-x:100%}.transform,.translate-x-full{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.justify-around{justify-content:space-around}.gap-0\.5{gap:.125rem}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-2\.5{gap:.625rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-x-4{-moz-column-gap:1rem;column-gap:1rem}.gap-y-2{row-gap:.5rem}.space-y-0\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.125rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.125rem*var(--tw-space-y-reverse))}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-1\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.375rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.375rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.whitespace-pre-line{white-space:pre-line}.break-all{word-break:break-all}.rounded{border-radius:.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-xl{border-radius:.75rem}.rounded-t{border-top-left-radius:.25rem;border-top-right-radius:.25rem}.rounded-t-2xl{border-top-left-radius:1rem;border-top-right-radius:1rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138/var(--tw-border-opacity,1))}.border-brand-700{--tw-border-opacity:1;border-color:rgb(115 87 77/var(--tw-border-opacity,1))}.border-neutral-200{--tw-border-opacity:1;border-color:rgb(229 229 229/var(--tw-border-opacity,1))}.border-neutral-300{--tw-border-opacity:1;border-color:rgb(212 212 212/var(--tw-border-opacity,1))}.border-neutral-800{--tw-border-opacity:1;border-color:rgb(38 38 38/var(--tw-border-opacity,1))}.bg-\[\#0088cc\]{--tw-bg-opacity:1;background-color:rgb(0 136 204/var(--tw-bg-opacity,1))}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199/var(--tw-bg-opacity,1))}.bg-amber-400{--tw-bg-opacity:1;background-color:rgb(251 191 36/var(--tw-bg-opacity,1))}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-amber-500{--tw-bg-opacity:1;background-color:rgb(245 158 11/var(--tw-bg-opacity,1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0/var(--tw-bg-opacity,1))}.bg-black\/50{background-color:rgba(0,0,0,.5)}.bg-black\/60{background-color:rgba(0,0,0,.6)}.bg-brand-50{--tw-bg-opacity:1;background-color:rgb(253 248 246/var(--tw-bg-opacity,1))}.bg-brand-700{--tw-bg-opacity:1;background-color:rgb(115 87 77/var(--tw-bg-opacity,1))}.bg-brand-800{--tw-bg-opacity:1;background-color:rgb(89 66 58/var(--tw-bg-opacity,1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229/var(--tw-bg-opacity,1))}.bg-neutral-100{--tw-bg-opacity:1;background-color:rgb(245 245 245/var(--tw-bg-opacity,1))}.bg-neutral-200{--tw-bg-opacity:1;background-color:rgb(229 229 229/var(--tw-bg-opacity,1))}.bg-neutral-50{--tw-bg-opacity:1;background-color:rgb(250 250 250/var(--tw-bg-opacity,1))}.bg-neutral-800{--tw-bg-opacity:1;background-color:rgb(38 38 38/var(--tw-bg-opacity,1))}.bg-neutral-900{--tw-bg-opacity:1;background-color:rgb(23 23 23/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/90{background-color:hsla(0,0%,100%,.9)}.bg-cover{background-size:cover}.bg-center{background-position:50%}.object-contain{-o-object-fit:contain;object-fit:contain}.object-cover{-o-object-fit:cover;object-fit:cover}.p-1\.5{padding:.375rem}.p-2{padding:.5rem}.p-2\.5{padding:.625rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.px-1{padding-left:.25rem;padding-right:.25rem}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-1{padding-bottom:.25rem}.pb-8{padding-bottom:2rem}.pl-8{padding-left:2rem}.pr-3{padding-right:.75rem}.pt-0{padding-top:0}.pt-2{padding-top:.5rem}.pt-3{padding-top:.75rem}.pt-4{padding-top:1rem}.pt-8{padding-top:2rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-sans{font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[12px\]{font-size:12px}.text-\[9px\]{font-size:9px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-medium{font-weight:500}.font-normal{font-weight:400}.uppercase{text-transform:uppercase}.leading-none{line-height:1}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-wider{letter-spacing:.05em}.tracking-widest{letter-spacing:.1em}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77/var(--tw-text-opacity,1))}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-brand-700{--tw-text-opacity:1;color:rgb(115 87 77/var(--tw-text-opacity,1))}.text-brand-800{--tw-text-opacity:1;color:rgb(89 66 58/var(--tw-text-opacity,1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-neutral-100{--tw-text-opacity:1;color:rgb(245 245 245/var(--tw-text-opacity,1))}.text-neutral-300{--tw-text-opacity:1;color:rgb(212 212 212/var(--tw-text-opacity,1))}.text-neutral-400{--tw-text-opacity:1;color:rgb(163 163 163/var(--tw-text-opacity,1))}.text-neutral-500{--tw-text-opacity:1;color:rgb(115 115 115/var(--tw-text-opacity,1))}.text-neutral-600{--tw-text-opacity:1;color:rgb(82 82 82/var(--tw-text-opacity,1))}.text-neutral-700{--tw-text-opacity:1;color:rgb(64 64 64/var(--tw-text-opacity,1))}.text-neutral-800{--tw-text-opacity:1;color:rgb(38 38 38/var(--tw-text-opacity,1))}.text-neutral-900{--tw-text-opacity:1;color:rgb(23 23 23/var(--tw-text-opacity,1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity,1))}.text-rose-700{--tw-text-opacity:1;color:rgb(190 18 60/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-0{opacity:0}.opacity-40{opacity:.4}.opacity-70{opacity:.7}.shadow{--tw-shadow:0 1px 3px 0 rgba(0,0,0,.1),0 1px 2px -1px rgba(0,0,0,.1);--tw-shadow-colored:0 1px 3px 0 var(--tw-shadow-color),0 1px 2px -1px var(--tw-shadow-color)}.shadow,.shadow-2xl{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-md{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color)}.shadow-md,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.transition-transform{transition-property:transform;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.duration-300{transition-duration:.3s}.hover\:bg-\[\#0077b5\]:hover{--tw-bg-opacity:1;background-color:rgb(0 119 181/var(--tw-bg-opacity,1))}.hover\:bg-brand-800:hover{--tw-bg-opacity:1;background-color:rgb(89 66 58/var(--tw-bg-opacity,1))}.hover\:bg-neutral-200:hover{--tw-bg-opacity:1;background-color:rgb(229 229 229/var(--tw-bg-opacity,1))}.hover\:text-amber-300:hover{--tw-text-opacity:1;color:rgb(252 211 77/var(--tw-text-opacity,1))}.focus\:border-brand-700:focus{--tw-border-opacity:1;border-color:rgb(115 87 77/var(--tw-border-opacity,1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}@media (min-width:640px){.sm\:h-64{height:16rem}.sm\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.sm\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.sm\:p-10{padding:2.5rem}.sm\:p-5{padding:1.25rem}.sm\:text-3xl{font-size:1.875rem;line-height:2.25rem}.sm\:text-sm{font-size:.875rem;line-height:1.25rem}}@media (min-width:768px){.md\:hidden{display:none}.md\:max-w-sm{max-width:24rem}.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:items-center{align-items:center}.md\:rounded-2xl{border-radius:1rem}.md\:pb-6{padding-bottom:1.5rem}}@media (min-width:1024px){.lg\:col-span-1{grid-column:span 1/span 1}.lg\:col-span-3{grid-column:span 3/span 3}.lg\:block{display:block}.lg\:hidden{display:none}.lg\:cursor-default{cursor:default}.lg\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}}</style>
@@ -444,6 +462,14 @@ try { if (localStorage.getItem('theme') === 'dark') document.documentElement.cla
     <button onclick="window.closeProductModal()" class="absolute right-3 top-3 bg-white/90 w-9 h-9 rounded-full flex items-center justify-center font-bold z-10 shadow">&times;</button>
     <div id="modalContent" class="p-4 space-y-3 max-h-[85vh] overflow-y-auto"></div>
   </div>
+</div>
+
+<!-- ФОТО НА ВЕСЬ ЕКРАН -->
+<div id="lightbox" class="hidden" role="dialog" aria-label="Фото товару">
+  <div id="lbStage"><div id="lbTrack"></div></div>
+  <div id="lbBar"><span id="lbCount"></span><button class="lb-btn" onclick="window.closeLightbox()" aria-label="Закрити">&times;</button></div>
+  <button id="lbPrev" class="lb-btn lb-nav" style="left:12px" onclick="window.lbGo(-1)" aria-label="Попереднє фото">&#8249;</button>
+  <button id="lbNext" class="lb-btn lb-nav" style="right:12px" onclick="window.lbGo(1)" aria-label="Наступне фото">&#8250;</button>
 </div>
 
 <footer class="bg-neutral-900 text-neutral-300 pt-8 pb-8 md:pb-6 mt-auto text-xs">
@@ -2372,7 +2398,7 @@ window.openProductModal = function (id) {
   const rows = Object.entries(p.filters || {}).filter(([, v]) => v?.length).map(([k, v]) => `<div><strong>${esc(k)}:</strong> ${esc(v.join(', '))}</div>`).join('');
   $('modalContent').innerHTML = `
     <div class="space-y-2">
-      <div id="mainModalMedia" class="aspect-square bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center">${mediaHtml(first)}</div>
+      <div id="mainModalMedia" class="aspect-square bg-neutral-100 rounded-xl overflow-hidden flex items-center justify-center" onclick="window.openModalPhoto()">${mediaHtml(first)}</div>
       ${media.length > 1 ? `<div class="flex gap-1.5 overflow-x-auto pb-1">${media.map((m, i) => m.type === 'video'
         ? `<div onclick="window.selectModalMedia(${i})" class="w-14 h-14 shrink-0 rounded cursor-pointer bg-neutral-800 flex items-center justify-center text-white">▶</div>`
         : imgTag(m.url, 120, `loading="lazy" onclick="window.selectModalMedia(${i})" class="w-14 h-14 shrink-0 object-cover rounded cursor-pointer border"`)).join('')}</div>` : ''}
@@ -2393,6 +2419,7 @@ window.openProductModal = function (id) {
       <button onclick="window.addToCart('${id}'); window.closeProductModal();" class="flex-1 py-3 bg-brand-700 text-white rounded-xl font-bold text-xs min-h-[48px]">Додати в кошик</button>
       <button onclick="window.shareProduct('${id}')" class="btn-sec" style="min-height:48px;border-radius:12px" title="Поділитися">📤 Поділитися</button>
     </div>`;
+  if (first) window.selectModalMedia(0);
   $('productModal').classList.remove('hidden');
 };
 // Поділитися товаром: на телефоні відкриває меню (Telegram, Viber, Instagram…), на комп'ютері копіює посилання
@@ -2411,11 +2438,160 @@ function mediaHtml(m) {
   if (!m) return '<span class="text-4xl text-neutral-300">📦</span>';
   return m.type === 'video' ? `<video src="${esc(m.url)}" controls playsinline preload="metadata" class="w-full h-full object-contain bg-black"></video>` : imgTag(m.url, 900, 'class="w-full h-full object-cover"');
 }
-window.selectModalMedia = i => { const m = (window.currentModalMedia || [])[i]; if (m) $('mainModalMedia').innerHTML = mediaHtml(m); };
+window.selectModalMedia = i => {
+  const m = (window.currentModalMedia || [])[i]; if (!m) return;
+  const box = $('mainModalMedia'), pic = m.type === 'image';
+  box.innerHTML = mediaHtml(m) + (pic ? '<span class="zoom-hint">⤢</span>' : '');
+  box.classList.toggle('zoomable', pic); window.currentModalIdx = i;
+};
+// Натиснули на велике фото в картці — відкриваємо всі фото товару на весь екран
+window.openModalPhoto = () => {
+  const media = window.currentModalMedia || [], m = media[window.currentModalIdx || 0];
+  if (!m || m.type !== 'image') return;
+  const imgs = media.filter(x => x.type === 'image');
+  openLightbox(imgs.map(x => x.url), imgs.indexOf(m));
+};
 window.closeProductModal = () => {
   $('productModal').classList.add('hidden'); document.querySelectorAll('#modalContent video').forEach(v => v.pause());
   if (location.hash.startsWith('#p-')) history.replaceState(null, '', location.pathname + location.search);
 };
+
+/* ---------- Фото на весь екран: свайп, збільшення двома пальцями, закриття ---------- */
+const lb = { urls: [], i: 0, s: 1, tx: 0, ty: 0, pts: new Map(), g: null, lastTap: { t: 0, x: 0, y: 0 }, pushed: false };
+const lbOpen = () => !$('lightbox').classList.contains('hidden');
+const lbImg = () => $('lbTrack').children[lb.i]?.querySelector('img');
+const lbDist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+function lbRel(x, y) { const r = $('lbStage').getBoundingClientRect(); return { x: x - r.left - r.width / 2, y: y - r.top - r.height / 2 }; }
+function lbApply(anim) { const im = lbImg(); if (!im) return; im.classList.toggle('anim', !!anim); im.style.transform = `translate(${lb.tx}px,${lb.ty}px) scale(${lb.s})`; }
+function lbClamp() {   // збільшене фото не можна відсунути за край
+  const im = lbImg(), st = $('lbStage'); if (!im) return;
+  const mx = Math.max(0, (im.offsetWidth * lb.s - st.clientWidth) / 2), my = Math.max(0, (im.offsetHeight * lb.s - st.clientHeight) / 2);
+  lb.tx = Math.min(mx, Math.max(-mx, lb.tx)); lb.ty = Math.min(my, Math.max(-my, lb.ty));
+}
+function lbTrack(dx, anim) { const t = $('lbTrack'); t.classList.toggle('anim', !!anim); t.style.transform = `translateX(calc(${-lb.i * 100}% + ${dx || 0}px))`; }
+function lbDrag(dy, anim) {   // тягнемо фото вниз — фон світлішає, відпустили нижче — закриваємо
+  const sl = $('lbTrack').children[lb.i]; if (!sl) return;
+  sl.classList.toggle('anim', !!anim); sl.style.transform = dy ? `translateY(${dy}px)` : '';
+  $('lightbox').style.background = `rgba(0,0,0,${Math.max(0.25, 1 - Math.abs(dy) / 400)})`;
+}
+function lbShow() {
+  lb.s = 1; lb.tx = lb.ty = 0;
+  [...$('lbTrack').children].forEach(sl => { sl.style.transform = ''; const im = sl.querySelector('img'); if (im) im.style.transform = ''; });
+  for (const k of [lb.i - 1, lb.i, lb.i + 1]) {   // спершу копія з картки (вже завантажена), потім оригінал
+    const im = $('lbTrack').children[k]?.querySelector('img'), u = lb.urls[k]; if (!im || im.src) continue;
+    im.onerror = () => { if (im.src !== u) im.src = u; };
+    im.src = small(u, 900);
+    const big = new Image(); big.onload = () => { if (im.isConnected) im.src = u; }; big.src = u;
+  }
+  const many = lb.urls.length > 1;
+  $('lbCount').textContent = many ? `${lb.i + 1} / ${lb.urls.length}` : '';
+  $('lbPrev').disabled = lb.i === 0; $('lbNext').disabled = lb.i === lb.urls.length - 1;
+  $('lbPrev').style.visibility = $('lbNext').style.visibility = many ? '' : 'hidden';
+}
+function openLightbox(urls, i) {
+  if (!urls.length) return;
+  lb.urls = urls; lb.i = Math.max(0, i); lb.pts.clear(); lb.g = null;
+  $('lbTrack').innerHTML = urls.map(() => '<div class="lb-slide"><img alt="" draggable="false"></div>').join('');
+  $('lightbox').style.background = '';
+  $('lightbox').classList.remove('hidden'); document.body.classList.add('lock');
+  lbTrack(0); lbShow();
+  if (!lb.pushed) { history.pushState({ lb: 1 }, ''); lb.pushed = true; }   // кнопка «Назад» телефону закриває фото, а не сайт
+}
+function hideLightbox() { $('lightbox').classList.add('hidden'); $('lbTrack').innerHTML = ''; lb.pts.clear(); lb.g = null; lockBody(); }
+window.closeLightbox = () => {
+  if (lb.pushed) { lb.pushed = false; history.back(); return; }   // далі спрацює popstate → hideLightbox
+  hideLightbox();
+};
+window.addEventListener('popstate', () => { if (lbOpen()) { lb.pushed = false; hideLightbox(); } });
+window.lbGo = d => {
+  const n = lb.i + d;
+  if (n < 0 || n >= lb.urls.length) { lbTrack(0, true); return; }
+  lb.i = n; lbTrack(0, true); lbShow();
+};
+function lbZoomAt(x, y, s) {
+  const m = lbRel(x, y), q = { x: (m.x - lb.tx) / lb.s, y: (m.y - lb.ty) / lb.s };
+  lb.s = s; lb.tx = m.x - s * q.x; lb.ty = m.y - s * q.y;
+  if (lb.s <= 1.01) { lb.s = 1; lb.tx = lb.ty = 0; } else lbClamp();
+}
+function lbTap(e) {
+  const l = lb.lastTap, now = Date.now();
+  if (now - l.t < 320 && Math.hypot(e.clientX - l.x, e.clientY - l.y) < 40) {   // подвійний дотик — збільшити / повернути
+    lb.lastTap = { t: 0, x: 0, y: 0 };
+    lbZoomAt(e.clientX, e.clientY, lb.s > 1.01 ? 1 : 2.5); lbApply(true);
+  } else {
+    lb.lastTap = { t: now, x: e.clientX, y: e.clientY };
+    if (e.pointerType === 'mouse' && e.target.tagName !== 'IMG') window.closeLightbox();   // клік мишкою по чорному полю
+  }
+}
+(() => {
+  const st = $('lbStage');
+  st.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    try { st.setPointerCapture(e.pointerId); } catch (_) {}
+    lb.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const p = [...lb.pts.values()];
+    if (p.length === 2) {   // другий палець — починаємо збільшення
+      if (lb.g?.mode === 'x') lbTrack(0, true);
+      if (lb.g?.mode === 'y') lbDrag(0, true);
+      const m = lbRel((p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2);
+      lb.g = { mode: 'pinch', d0: lbDist(p[0], p[1]) || 1, s0: lb.s, q: { x: (m.x - lb.tx) / lb.s, y: (m.y - lb.ty) / lb.s } };
+    } else if (p.length === 1) lb.g = { mode: null, x0: e.clientX, y0: e.clientY, tx0: lb.tx, ty0: lb.ty, t0: Date.now(), moved: false };
+  });
+  st.addEventListener('pointermove', e => {
+    if (!lb.pts.has(e.pointerId)) return;
+    lb.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const g = lb.g; if (!g) return;
+    if (g.mode === 'pinch') {
+      const p = [...lb.pts.values()]; if (p.length < 2) return;
+      const m = lbRel((p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2);
+      lb.s = Math.min(5, Math.max(0.7, g.s0 * lbDist(p[0], p[1]) / g.d0));
+      lb.tx = m.x - lb.s * g.q.x; lb.ty = m.y - lb.s * g.q.y; lbApply(); return;
+    }
+    const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+    if (!g.mode) {
+      if (Math.hypot(dx, dy) < 8) return;
+      g.moved = true;
+      g.mode = lb.s > 1.01 ? 'pan' : Math.abs(dx) > Math.abs(dy) ? 'x' : dy > 0 ? 'y' : 'none';
+    }
+    if (g.mode === 'pan') { lb.tx = g.tx0 + dx; lb.ty = g.ty0 + dy; lbClamp(); lbApply(); }
+    else if (g.mode === 'x') { const edge = (lb.i === 0 && dx > 0) || (lb.i === lb.urls.length - 1 && dx < 0); lbTrack(edge ? dx / 3 : dx); }
+    else if (g.mode === 'y') lbDrag(Math.max(0, dy));
+  });
+  const end = e => {
+    if (!lb.pts.delete(e.pointerId)) return;
+    const g = lb.g; if (!g) return;
+    if (g.mode === 'pinch') {
+      if (lb.s <= 1.01) { lb.s = 1; lb.tx = lb.ty = 0; } else { lb.s = Math.min(4, lb.s); lbClamp(); }
+      lbApply(true);
+      const [p] = lb.pts.values();   // лишився один палець — ним можна рухати збільшене фото
+      lb.g = p ? { mode: lb.s > 1.01 ? 'pan' : 'none', x0: p.x, y0: p.y, tx0: lb.tx, ty0: lb.ty, t0: 0, moved: true } : null;
+      return;
+    }
+    if (lb.pts.size) return;
+    lb.g = null;
+    const dx = e.clientX - g.x0, dy = e.clientY - g.y0, dt = Math.max(1, Date.now() - g.t0);
+    if (g.mode === 'x') {
+      const fast = Math.abs(dx) > 30 && Math.abs(dx) / dt > 0.4;
+      if (Math.abs(dx) > st.clientWidth / 4 || fast) window.lbGo(dx < 0 ? 1 : -1); else lbTrack(0, true);
+    } else if (g.mode === 'y') {
+      if (dy > 110 || (dy > 40 && dy / dt > 0.5)) window.closeLightbox(); else lbDrag(0, true);
+    } else if (!g.moved && e.type === 'pointerup') lbTap(e);
+  };
+  st.addEventListener('pointerup', end);
+  st.addEventListener('pointercancel', end);
+  st.addEventListener('wheel', e => {   // коліщатко мишки — збільшення
+    e.preventDefault(); lbZoomAt(e.clientX, e.clientY, Math.min(4, Math.max(1, lb.s * (e.deltaY < 0 ? 1.2 : 1 / 1.2)))); lbApply();
+  }, { passive: false });
+  $('lightbox').addEventListener('gesturestart', e => e.preventDefault());   // iPhone: не збільшувати всю сторінку
+  document.addEventListener('keydown', e => {
+    if (!lbOpen()) return;
+    if (e.key === 'Escape') { e.preventDefault(); window.closeLightbox(); }
+    else if (e.key === 'ArrowLeft') window.lbGo(-1);
+    else if (e.key === 'ArrowRight') window.lbGo(1);
+  });
+  window.addEventListener('resize', () => { if (lbOpen()) { lb.s = 1; lb.tx = lb.ty = 0; lbApply(); } });
+})();
+
 window.toggleMobileFilters = () => {
   const c = $('filterContent'); c.classList.toggle('hidden');
   $('filterToggleIcon').innerText = c.classList.contains('hidden') ? '▼' : '▲';
